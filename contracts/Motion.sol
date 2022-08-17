@@ -570,6 +570,7 @@ contract Motion is IERC20, Ownable {
             path1[1] = SaitaToken;
             IERC20(address(this)).approve(address(router),1000000000000000000000);
             console.log("===================",taxAmount);
+            console.log("blablablablablabalablaabla",IERC20(address(this)).allowance(address(this),address(router)));
 
             router.swapExactTokensForTokens(taxAmount, 1, path1, marketingAddress, block.timestamp+3600);
             // address[] memory path2= new address[](2);
