@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { time } from "console";
 import { mineBlocks, expandTo9Decimals, expandTo18Decimals } from "./utilities/utilities";
-import { CalHash, CalHash__factory, IFactory, IFactory__factory, IRouter, IRouter__factory, Motion, Motion__factory, Saitama, Saitama__factory, SaitaRealtyV2, SaitaRealtyV2__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02, UniswapV2Router02__factory, USDT, USDT__factory, WETH9, WETH9__factory } from "../typechain";
+import { Burner, Burner__factory, CalHash, CalHash__factory, IFactory, IFactory__factory, IRouter, IRouter__factory, Motion, MotionII, MotionII__factory, Motion__factory, Saitama, Saitama__factory, SaitaRealtyV2, SaitaRealtyV2__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02, UniswapV2Router02__factory, USDT, USDT__factory, WETH9, WETH9__factory } from "../typechain";
 import { string } from "hardhat/internal/core/params/argumentTypes";
 // import { SaitaRealtyV2 } from "../typechain-types/SaitaRealtyV2";
 // import { IFactory } from "../typechain-types/IFactory";
@@ -21,6 +21,8 @@ describe("Testing", function () {
     let inithash : CalHash;
     let usdt : USDT;
     let saitama : Saitama;
+    let saitaBurner : Burner;
+    let motionII : MotionII;
 
 
     beforeEach("Saita", async () => {
@@ -37,13 +39,18 @@ describe("Testing", function () {
         pair = await new UniswapV2Pair__factory(owner).deploy();
         saita = await new SaitaRealtyV2__factory(owner).deploy(router.address);
         saitama = await new Saitama__factory(owner).deploy();
-        motion = await new Motion__factory(owner).deploy(router.address,saitama.address);
+        saitaBurner = await new Burner__factory(owner).deploy();
+        motion = await new Motion__factory(owner).deploy(router.address,saitama.address,saitaBurner.address);
         usdt = await new USDT__factory(owner).deploy(owner.address);
+        motionII = await new MotionII__factory(owner).deploy(router.address,saitama.address,saitaBurner.address);
+        await saitaBurner.connect(owner).initialize(router.address,saitama.address,motion.address,usdt.address);
         await motion.connect(owner).updateCoolDownSettings(false,0);
-
         await saitama.connect(owner).approve(router.address,expandTo18Decimals(1000000000));
         await motion.connect(owner).approve(router.address,expandTo18Decimals(1000000000));
         await router.connect(owner).addLiquidity(saitama.address,motion.address,expandTo9Decimals(10000000),expandTo9Decimals(10000000),1,1,owner.address,1759004587);
+        let pairAddress = await factory.connect(owner).getPair(motion.address,saitama.address);
+        let pairInstance = await new UniswapV2Pair__factory(owner).attach(pairAddress);
+        console.log("///////////////..........///////////////",await pairInstance.getReserves());
         // await saita.setAddress(
         //     signers[5].address,//treasury
         //     signers[6].address,//marketing
@@ -56,11 +63,12 @@ describe("Testing", function () {
         await saita.connect(owner).updateMarketingWallet(signers[6].address);
         await saita.connect(owner).updateBurnWallet(signers[6].address);
         await saita.connect(owner).updateStableCoin(usdt.address);
-        await saita.connect(owner).setTaxes(10,10,10,10,50);
-        await saita.approve(router.address, expandTo18Decimals(1000))
+        // await saita.connect(owner).setTaxes(10,10,10,10,50);
+        await saita.approve(router.address, expandTo18Decimals(1000));
         await router.connect(owner).addLiquidityETH(saita.address,expandTo9Decimals(100),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
-        console.log(String(await router.connect(owner).getAmountsOut("500000000",[saita.address,Weth.address])));
-        await usdt.approve(router.address, expandTo18Decimals(1200))
+        let amountss = String(await router.connect(owner).getAmountsOut("500000000",[saitama.address,motion.address]));
+        console.log(amountss);
+        await usdt.approve(router.address, expandTo18Decimals(1200));
         await router.connect(owner).addLiquidityETH(usdt.address,expandTo9Decimals(1000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
         console.log("After before");
         await saita.connect(owner).updateCoolDownSettings(false,0);
@@ -69,15 +77,18 @@ describe("Testing", function () {
         await motion.connect(owner).updateMarketingWallet(signers[6].address);
         await motion.connect(owner).updateBurnWallet(signers[6].address);
         await motion.connect(owner).updateStableCoin(usdt.address);
-        await motion.connect(owner).setTaxes(10,10,10,10,50,10);
+        await motion.connect(owner).setTaxes(10,10,10,10,50,0);
         await motion.approve(router.address, expandTo18Decimals(1000))
         await router.connect(owner).addLiquidityETH(motion.address,expandTo9Decimals(100),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
         console.log(String(await router.connect(owner).getAmountsOut("500000000",[motion.address,Weth.address])));
-        await usdt.approve(router.address, expandTo18Decimals(1200))
+        await usdt.approve(router.address, expandTo18Decimals(120000));
+        await saitama.approve(router.address,expandTo18Decimals(100000000));
         await router.connect(owner).addLiquidityETH(usdt.address,expandTo9Decimals(1000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
         console.log("After before");
         await motion.connect(owner).updateCoolDownSettings(false,0);
-        // await motion.connect(owner).disableSaitaTax();
+        await router.connect(owner).addLiquidity(usdt.address,saitama.address,1000000000000,1000000000000000,1,1,owner.address,1759004587);
+        await motion.connect(owner).enableSaitaTax();
+        await motion.connect(owner).excludeFromFee(router.address);
     })
 
     it("Getter Functions", async() => {
@@ -107,24 +118,29 @@ describe("Testing", function () {
         
         // await saita.allowance(owner.address,signers[1].address);
         // await saita.approve(signers[1].address, expandTo9Decimals(1200000000))
+        // await motion.connect(owner).setTaxes(10,10,10,10,50,0);
         await motion.connect(owner).transfer(signers[1].address, expandTo9Decimals(1000));
+        await motion.connect(owner).excludeFromFee(saitaBurner.address);
         console.log("Balance of account 1 after Transfer-- ", await motion.balanceOf(signers[1].address));
         // await saita.excludeFromFee(signers[1].address);
         console.log("Balance of 2nd signers Before",await motion.balanceOf(signers[2].address));
         console.log(String(await ethers.provider.getBalance(signers[5].address)),String(await ethers.provider.getBalance(signers[6].address)),"before tr===mr");
         await motion.allowance(signers[1].address,signers[2].address);
         await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
-        await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(1000))
+        await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(100));
         // await saita.connect(signers[1]).transfer(signers[2].address, expandTo9Decimals(10));
         console.log("Balance of 2nd signers",await motion.balanceOf(signers[2].address));
         console.log(String(await ethers.provider.getBalance(signers[5].address)),String(await ethers.provider.getBalance(signers[6].address)),"after tr===mr");
-        console.log("balance for saita: "+await saitama.balanceOf(await motion.marketingAddress()));
+        console.log("Burner balance to swap and burn: ",await motion.balanceOf(saitaBurner.address));
+        // await saitaBurner.connect(owner).burnSaita();
+        // console.log("addressssssssssssssssss",motion.address);
+        // console.log("aaaaaaaaaaaaaaaaaaaaaaaaaa",await router.getAmountsOut(1000000000,[usdt.address,saitama.address]));
     })
 
-    it("Setting Taxes",async () => {
-        await saita.setTaxes(1,1,1,1,5);
-        console.log("New Taxes are : ",await saita.taxes())
-    })
+    // it("Setting Taxes",async () => {
+    //     await saita.setTaxes(1,1,1,1,5);
+    //     console.log("New Taxes are : ",await saita.taxes())
+    // })
 
     it("Buy Tokens",async () => {
         const pairAddress = await factory.getPair(

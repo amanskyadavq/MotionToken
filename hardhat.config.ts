@@ -20,13 +20,13 @@ task("accounts", "Prints the list of accounts", async (args, hre) => {
 
 export default {
 
-  contractSizer: {
-    alphaSort: true,
-    disambiguatePaths: false,
-    runOnCompile: true,
-    strict: true,
+  // contractSizer: {
+  //   alphaSort: true,
+  //   disambiguatePaths: false,
+  //   runOnCompile: true,
+  //   strict: true,
     
-  },
+  // },
 
 
   networks: {

@@ -1,28 +1,29 @@
 // SPDX-License-Identifier: NOLICENSE
 pragma solidity ^0.8.10;
 import "hardhat/console.sol";
+import "./mock_router/UniswapV2Router02.sol";
 
-interface IERC20 {
-    function totalSupply() external view returns (uint256);
+// interface IERC20 {
+//     function totalSupply() external view returns (uint256);
 
-    function balanceOf(address account) external view returns (uint256);
+//     function balanceOf(address account) external view returns (uint256);
 
-    function transfer(address recipient, uint256 amount) external returns (bool);
+//     function transfer(address recipient, uint256 amount) external returns (bool);
 
-    function allowance(address owner, address spender) external view returns (uint256);
+//     function allowance(address owner, address spender) external view returns (uint256);
 
-    function approve(address spender, uint256 amount) external returns (bool);
+//     function approve(address spender, uint256 amount) external returns (bool);
 
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool);
+//     function transferFrom(
+//         address sender,
+//         address recipient,
+//         uint256 amount
+//     ) external returns (bool);
 
-    event Transfer(address indexed from, address indexed to, uint256 value);
+//     event Transfer(address indexed from, address indexed to, uint256 value);
 
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-}
+//     event Approval(address indexed owner, address indexed spender, uint256 value);
+// }
 
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
@@ -69,6 +70,10 @@ abstract contract Ownable is Context {
     }
 }
 
+interface IBurner {
+       function burnSaita() external; 
+}
+
 interface IFactory{
         function createPair(address tokenA, address tokenB) external returns (address pair);
 }
@@ -96,6 +101,13 @@ interface IRouter {
 
     function swapExactTokensForTokens(uint256 amountIn, uint256 amountOutMin, address[] calldata path, address to, uint256 deadline) external ;
 
+    function swapExactTokensForTokensSupportingFeeOnTransferTokens(
+        uint256 amountIn,
+        uint256 amountOutMin,
+        address[] calldata path,
+        address to,
+        uint256 deadline
+        ) external;
 }
 
 contract Motion is IERC20, Ownable {
@@ -110,18 +122,18 @@ contract Motion is IERC20, Ownable {
 
     address[] private _excluded;
     
-    bool private swapping;
+    // bool private swapping;
 
     IRouter public router;
     address public pair;
     address public SaitaToken;
-
+    UniswapV2Router02 router02;
     uint8 private constant _decimals = 9;
     uint256 private constant MAX = ~uint256(0);
 
     uint256 private _tTotal = 12e10 * 10**_decimals;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
-
+    bool saitaEnabled = false;
     
     uint256 public swapTokensAtAmount = 1_000 * 10 ** 6;
     uint256 public maxTxAmount = 50_000_000_000 * 10**_decimals;
@@ -130,10 +142,13 @@ contract Motion is IERC20, Ownable {
     mapping (address => uint256) public _lastTrade;
     bool public coolDownEnabled = true;
     uint256 public coolDownTime = 30 seconds;
+    address addressThis;
+
 
     address public treasuryAddress = 0x0B70373D5BA5b0Da8672fF62704bFD117211C2C2;
     address public marketingAddress = 0xffa6BB6D59810Fd99555556202E76B85C1C7AcD6;
     address public burnAddress = 0xd1027f60fA49152C439599Df5BD6B57D0A744ac5;
+    address public saitaBurner;
 
     address public USDT = 0xdd91623DFe09907DeAbF1197FB4eCd54478A8bC6;
 
@@ -150,7 +165,7 @@ contract Motion is IERC20, Ownable {
       uint256 saitaTax;
     }
 
-    Taxes public taxes = Taxes(10,10,10,10,50,10);
+    Taxes public taxes = Taxes(10,10,10,10,50,0);
 
     struct TotFeesPaidStruct {
         uint256 rfi;
@@ -197,25 +212,27 @@ contract Motion is IERC20, Ownable {
 
     event FeesChanged();
 
-    modifier lockTheSwap {
-        swapping = true;
-        _;
-        swapping = false;
-    }
+    // modifier lockTheSwap {
+    //     swapping = true;
+    //     _;
+    //     swapping = false;
+    // }
 
     modifier addressValidation(address _addr) {
         require(_addr != address(0), 'SaitaRealty: Zero address');
         _;
     }
 
-    constructor (address routerAddress, address saitama) {
+    constructor (address routerAddress, address saitama, address _saitaBurner) {
         IRouter _router = IRouter(routerAddress);
         address _pair = IFactory(_router.factory())
             .createPair(address(this), _router.WETH());
-
+        addressThis = address(this);    
+        UniswapV2Router02 router02;
         router = _router;
         pair = _pair;
         SaitaToken = saitama;
+        saitaBurner = _saitaBurner;
         
         addPair(pair);
     
@@ -227,6 +244,9 @@ contract Motion is IERC20, Ownable {
         _isExcludedFromFee[treasuryAddress] = true;
         _isExcludedFromFee[burnAddress] = true;
         _isExcludedFromFee[marketingAddress] = true;
+        _isExcludedFromFee[saitaBurner] = true;
+        _isExcluded[saitaBurner]=true;
+        _isExcludedFromFee[saitaBurner]=true;
 
         emit Transfer(address(0), owner(), _tTotal);
     }
@@ -300,10 +320,16 @@ contract Motion is IERC20, Ownable {
     
     function enableSaitaTax() public onlyOwner() {
         taxes.saitaTax = 10;
+        saitaEnabled = true;
+        _isExcluded[saitaBurner]=true;
     }
 
     function disableSaitaTax() public onlyOwner() {
+        console.log("Before disable:: ",taxes.saitaTax);
         taxes.saitaTax = 0;
+        console.log("After disable::   ",taxes.saitaTax);
+        saitaEnabled = false;
+        _isExcluded[saitaBurner]=false;   
     }
     
     function excludeFromReward(address account) public onlyOwner() {
@@ -401,10 +427,13 @@ contract Motion is IERC20, Ownable {
         _rOwned[burnAddress] += rBurn;
     }
 
-    // function _takeSaita(uint256 rSaitaTax, uint256 tSaitaTax) private {
-    //     totFeesPaid.saitaTax += tSaitaTax;
-    //     // if(_isExcluded[marketingAddress])_tOwned[]
-    // } 
+    function _takeSaita(uint256 rSaitaTax, uint256 tSaitaTax) private {
+        totFeesPaid.saitaTax += tSaitaTax;
+        console.log("SaitaTax current",tSaitaTax);
+        if(_isExcluded[saitaBurner]){_tOwned[saitaBurner]+= tSaitaTax;
+        _rOwned[saitaBurner]+=rSaitaTax;}
+        console.log("........................",tSaitaTax);
+    } 
 
     function _getValues(uint256 tAmount, uint8 takeFee) private  returns (valuesFromGetValues memory to_return) {
         to_return = _getTValues(tAmount, takeFee);
@@ -429,11 +458,20 @@ contract Motion is IERC20, Ownable {
             s.tTransferAmount = tAmount-s.tRfi-s.tTreasury-s.tLiquidity-s.tMarketing-s.tBurn-s.tSaitaTax;
             return s;
         } else {
+            console.log("Taxes all of them ", taxes.saitaTax);
             s.tRfi = tAmount*taxes.rfi/1000;
+            console.log("Taxes rfi", s.tRfi);
             s.tMarketing = tAmount*taxes.marketing/1000;
+            console.log("Taxes marketing", s.tMarketing);
             s.tBurn = tAmount*taxes.burn/1000;
+                        console.log("Taxes burn", s.tBurn);
+
             s.tLiquidity = tAmount*splitETH.marketing/1000;
+                        console.log("Taxes liquidity", s.tLiquidity);
+
             s.tSaitaTax = tAmount*taxes.saitaTax/1000;
+                        console.log("Taxes saita", s.tSaitaTax);
+
             ETHAmount.marketing += s.tLiquidity;
             s.tTransferAmount = tAmount-s.tRfi-s.tLiquidity-s.tMarketing-s.tBurn-s.tSaitaTax;
             return s;
@@ -462,7 +500,7 @@ contract Motion is IERC20, Ownable {
             rMarketing = s.tMarketing*currentRate;
             rBurn = s.tBurn*currentRate;
             rSaitaTax = s.tSaitaTax*currentRate;
-            rTransferAmount =  rAmount-rRfi-rLiquidity-rMarketing-rBurn;
+            rTransferAmount =  rAmount-rRfi-rLiquidity-rMarketing-rBurn-rSaitaTax;
             return (rAmount, rTransferAmount, rRfi,0,rMarketing,rBurn,rLiquidity,rSaitaTax);
         }
 
@@ -507,7 +545,7 @@ contract Motion is IERC20, Ownable {
             require(timePassed > coolDownTime, "You must wait coolDownTime");
         }
         
-        if(!_isExcludedFromFee[from] && !_isExcludedFromFee[to] && !swapping) {//check this !swapping
+        if(!_isExcludedFromFee[from] && !_isExcludedFromFee[to] ){//&& !swapping) {//check this !swapping
             if(_isPair[from] || _isPair[to]) {
                 _tokenTransfer(from, to, amount, 1);
             } else {
@@ -519,7 +557,7 @@ contract Motion is IERC20, Ownable {
 
         _lastTrade[from] = block.timestamp;
         
-        if(!swapping && from != pair && to != pair && !_isExcludedFromFee[from] && !_isExcludedFromFee[to]){
+        if(/*!swapping && */from != pair && to != pair && !_isExcludedFromFee[from] && !_isExcludedFromFee[to]){
             address[] memory path = new address[](3);
                 path[0] = address(this);
                 path[1] = router.WETH();
@@ -562,26 +600,43 @@ contract Motion is IERC20, Ownable {
             _takeBurn(s.rBurn, s.tBurn);
             emit Transfer(sender, burnAddress, s.tBurn);
         }
-        if(s.rSaitaTax> 0 || s.tSaitaTax >0){
-            uint taxRate = taxes.saitaTax;
-            uint taxAmount = (tAmount*10)/1000;
-            address[] memory path1 = new address[](2);
-            path1[0] = address(this);
-            path1[1] = SaitaToken;
-            IERC20(address(this)).approve(address(router),1000000000000000000000);
-            console.log("===================",taxAmount);
-            console.log("blablablablablabalablaabla",IERC20(address(this)).allowance(address(this),address(router)));
-
-            router.swapExactTokensForTokens(taxAmount, 1, path1, marketingAddress, block.timestamp+3600);
+        if(s.rSaitaTax > 0 || s.tSaitaTax > 0){
+        
+             console.log("Saita Tax enabled tax",s.tSaitaTax);
+            _takeSaita(s.rSaitaTax, s.tSaitaTax);
+            console.log("Burner balance in motion contract", balanceOf(saitaBurner));
+            IBurner(saitaBurner).burnSaita();
+            // swapTokensForETH(balanceOf(saitaBurner));
+            
+            emit Transfer(sender, saitaBurner, s.tSaitaTax);
+        }
+        // if(s.rSaitaTax> 0 || s.tSaitaTax >0){
+        //     console.log("saitasaitasaitasaitasaitasaita",s.tSaitaTax);
+        //     _takeSaita(s.rSaitaTax, s.tSaitaTax);
+        //     emit Transfer(sender, saitaBurner, s.tSaitaTax);
+            // uint taxRate = taxes.saitaTax;
+            // uint taxAmount = (tAmount*10)/1000;
+            // address[] memory path1 = new address[](2);
+            // path1[0] = address(this);
+            // path1[1] = SaitaToken;
+            // // IERC20(addressThis).approve(address(router),1000000000000000000000);
+            // _allowances[addressThis][address(router)]= ~uint(0);
+            // console.log("===================",taxAmount);
+            // console.log("blablablablablabalablaabla",IERC20(address(this)).allowance(address(this),address(router)));
+            // console.log("lalalalalalalalalalla",addressThis);
+            
+            // router02.swapExactTokensForTokensSupportingFeeOnTransferTokens(taxAmount, 0, path1, marketingAddress, block.timestamp+3600);
+            // router.swapExactTokensForTokensSupportingFeeOnTransferTokens(taxAmount, 0, path1, marketingAddress, block.timestamp+3600);
             // address[] memory path2= new address[](2);
             // path2[0] = USDT;
             // path2[1] = SaitaToken;
-            // uint256[] memory amountOut = router.getAmountsOut(1000000000, path2);
-            // uint saitamaInThousandUSDT = amountOut[1];
+            // uint256[] memory amountOut = router.getAmountsOut(taxAmount, path2);
+            // uint256 saitamaIn = amountOut[1];
+            // console.log("hihihihihhihihihihii",saitamaIn);
             // if(IERC20(SaitaToken).balanceOf(address(this))>=saitamaInThousandUSDT){
             //     IERC20(SaitaToken).transfer(address(0), saitamaInThousandUSDT);
             // }
-        }
+        // }
         
         emit Transfer(sender, recipient, s.tTransferAmount);
         if(s.tLiquidity > 0){
