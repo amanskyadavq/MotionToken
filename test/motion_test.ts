@@ -86,6 +86,9 @@ describe("Testing", function () {
         await motion.connect(owner).updateCoolDownSettings(false,0);
         await router.connect(owner).addLiquidity(usdt.address,saitama.address,1000000000000,1000000000000000,1,1,owner.address,1759004587);
         await motion.connect(owner).enableSaitaTax();
+        // await motion.connect(owner).disableSaitaTax();
+        await router.connect(owner).addLiquidity(motion.address,usdt.address,expandTo9Decimals(10000),expandTo9Decimals(1),1,1,owner.address,1759004587);
+
         await motion.connect(owner).excludeFromFee(router.address);
     })
 
@@ -126,10 +129,10 @@ describe("Testing", function () {
         await motion.allowance(signers[1].address,signers[2].address);
         await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
         await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(100));
-        // await saita.connect(signers[1]).transfer(signers[2].address, expandTo9Decimals(10));
-        console.log("Balance of 2nd signers",await motion.balanceOf(signers[2].address));
-        console.log(String(await ethers.provider.getBalance(signers[5].address)),String(await ethers.provider.getBalance(signers[6].address)),"after tr===mr");
-        console.log("Burner balance to swap and burn: ",await motion.balanceOf(saitaBurner.address));
+        // // await saita.connect(signers[1]).transfer(signers[2].address, expandTo9Decimals(10));
+        // console.log("Balance of 2nd signers",await motion.balanceOf(signers[2].address));
+        // console.log(String(await ethers.provider.getBalance(signers[5].address)),String(await ethers.provider.getBalance(signers[6].address)),"after tr===mr");
+        // console.log("Burner balance to swap and burn: ",await motion.balanceOf(saitaBurner.address));
         // await saitaBurner.connect(owner).burnSaita();
         // console.log("addressssssssssssssssss",motion.address);
         // console.log("aaaaaaaaaaaaaaaaaaaaaaaaaa",await router.getAmountsOut(1000000000,[usdt.address,saitama.address]));

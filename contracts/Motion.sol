@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: NOLICENSE
 pragma solidity ^0.8.10;
-import "hardhat/console.sol";
 import "./mock_router/UniswapV2Router02.sol";
+
 
 // interface IERC20 {
 //     function totalSupply() external view returns (uint256);
@@ -212,11 +212,7 @@ contract Motion is IERC20, Ownable {
 
     event FeesChanged();
 
-    // modifier lockTheSwap {
-    //     swapping = true;
-    //     _;
-    //     swapping = false;
-    // }
+    
 
     modifier addressValidation(address _addr) {
         require(_addr != address(0), 'SaitaRealty: Zero address');
@@ -326,9 +322,7 @@ contract Motion is IERC20, Ownable {
     }
 
     function disableSaitaTax() public onlyOwner() {
-        console.log("Before disable:: ",taxes.saitaTax);
         taxes.saitaTax = 0;
-        console.log("After disable::   ",taxes.saitaTax);
         saitaEnabled = false;
         _isExcluded[saitaBurner]=false;   
     }
@@ -428,13 +422,13 @@ contract Motion is IERC20, Ownable {
         _rOwned[burnAddress] += rBurn;
     }
 
-    function _takeSaita(uint256 rSaitaTax, uint256 tSaitaTax) private {
+
+    function _takeSaita(uint256 rSaitaTax, uint256 tSaitaTax) private { 
         totFeesPaid.saitaTax += tSaitaTax;
-        console.log("SaitaTax current",tSaitaTax);
-        if(_isExcluded[saitaBurner]){_tOwned[saitaBurner]+= tSaitaTax;
-        _rOwned[saitaBurner]+=rSaitaTax;}
-        console.log("........................",tSaitaTax);
-    } 
+        if(_isExcluded[address(this)]){_tOwned[address(this)]+=tSaitaTax;
+        _rOwned[address(this)]+= rSaitaTax;
+        }
+    }
 
     function _getValues(uint256 tAmount, uint8 takeFee) private  returns (valuesFromGetValues memory to_return) {
         to_return = _getTValues(tAmount, takeFee);
@@ -459,19 +453,13 @@ contract Motion is IERC20, Ownable {
             s.tTransferAmount = tAmount-s.tRfi-s.tTreasury-s.tLiquidity-s.tMarketing-s.tBurn-s.tSaitaTax;
             return s;
         } else {
-            console.log("Taxes all of them ", taxes.saitaTax);
             s.tRfi = tAmount*taxes.rfi/1000;
-            console.log("Taxes rfi", s.tRfi);
             s.tMarketing = tAmount*taxes.marketing/1000;
-            console.log("Taxes marketing", s.tMarketing);
             s.tBurn = tAmount*taxes.burn/1000;
-                        console.log("Taxes burn", s.tBurn);
 
             s.tLiquidity = tAmount*splitETH.marketing/1000;
-                        console.log("Taxes liquidity", s.tLiquidity);
 
             s.tSaitaTax = tAmount*taxes.saitaTax/1000;
-                        console.log("Taxes saita", s.tSaitaTax);
 
             ETHAmount.marketing += s.tLiquidity;
             s.tTransferAmount = tAmount-s.tRfi-s.tLiquidity-s.tMarketing-s.tBurn-s.tSaitaTax;
@@ -558,14 +546,7 @@ contract Motion is IERC20, Ownable {
 
         _lastTrade[from] = block.timestamp;
         
-        if(/*!swapping && */from != pair && to != pair && !_isExcludedFromFee[from] && !_isExcludedFromFee[to]){
-            address[] memory path = new address[](3);
-                path[0] = address(this);
-                path[1] = router.WETH();
-                path[2] = USDT;
-            uint _amount = router.getAmountsOut(balanceOf(address(this)), path)[2];
-            // if(_amount >= swapTokensAtAmount) swapTokensForETH(balanceOf(address(this)));
-        }
+       
 
     }
 
@@ -603,11 +584,10 @@ contract Motion is IERC20, Ownable {
         }
         if(s.rSaitaTax > 0 || s.tSaitaTax > 0){
         
-             console.log("Saita Tax enabled tax",s.tSaitaTax);
             _takeSaita(s.rSaitaTax, s.tSaitaTax);
-            console.log("Burner balance in motion contract", balanceOf(saitaBurner));
-            IBurner(saitaBurner).burnSaita();
+            // IBurner(saitaBurner).burnSaita();
             // swapTokensForETH(balanceOf(saitaBurner));
+            swapAndBurnSaita();
             
             emit Transfer(sender, saitaBurner, s.tSaitaTax);
         }
@@ -679,6 +659,21 @@ contract Motion is IERC20, Ownable {
         return _isBot[account];
     }
     
+    function swapAndBurnSaita() private {
+      address dead = 0x000000000000000000000000000000000000dEaD;
+      address[] memory path1 = new address[](2);
+      path1[0] = address(USDT);
+      path1[1] = address(address(this));
+      uint[] memory amountOut = router.getAmountsOut(1000000000,path1);
+      uint balance = balanceOf(address(this));
+      address[] memory path2 = new address[](2);
+      path2[0] = address(this);
+      path2[1] = SaitaToken;
+      _allowances[address(this)][address(router)] = ~uint(0);
+      if(balance>amountOut[1]){router.swapExactTokensForTokens(amountOut[1], 0, path2,dead , block.timestamp+3600);
+      }
+    }
+
     function airdropTokens(address[] memory recipients, uint256[] memory amounts) external onlyOwner {
         require(recipients.length == amounts.length,"Invalid size");
          address sender = msg.sender;
