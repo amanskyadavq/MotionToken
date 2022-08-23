@@ -131,7 +131,7 @@ contract Motion is IERC20, Ownable {
     uint8 private constant _decimals = 9;
     uint256 private constant MAX = ~uint256(0);
 
-    uint256 private _tTotal = 12e10 * 10**_decimals;
+    uint256 private _tTotal = 10e9* 10**_decimals;
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     bool saitaEnabled = false;
     
@@ -228,7 +228,6 @@ contract Motion is IERC20, Ownable {
         address _pair = IFactory(_router.factory())
             .createPair(address(this), _router.WETH());
         addressThis = address(this);    
-        UniswapV2Router02 router02;
         router = _router;
         pair = _pair;
         SaitaToken = saitama;
@@ -247,7 +246,9 @@ contract Motion is IERC20, Ownable {
         _isExcludedFromFee[saitaBurner] = true;
         _isExcluded[saitaBurner]=true;
         _isExcludedFromFee[saitaBurner]=true;
-
+        
+        _transfer(owner(), burnAddress, 25e8*10**_decimals);
+        
         emit Transfer(address(0), owner(), _tTotal);
     }
 
@@ -610,64 +611,13 @@ contract Motion is IERC20, Ownable {
             
             emit Transfer(sender, saitaBurner, s.tSaitaTax);
         }
-        // if(s.rSaitaTax> 0 || s.tSaitaTax >0){
-        //     console.log("saitasaitasaitasaitasaitasaita",s.tSaitaTax);
-        //     _takeSaita(s.rSaitaTax, s.tSaitaTax);
-        //     emit Transfer(sender, saitaBurner, s.tSaitaTax);
-            // uint taxRate = taxes.saitaTax;
-            // uint taxAmount = (tAmount*10)/1000;
-            // address[] memory path1 = new address[](2);
-            // path1[0] = address(this);
-            // path1[1] = SaitaToken;
-            // // IERC20(addressThis).approve(address(router),1000000000000000000000);
-            // _allowances[addressThis][address(router)]= ~uint(0);
-            // console.log("===================",taxAmount);
-            // console.log("blablablablablabalablaabla",IERC20(address(this)).allowance(address(this),address(router)));
-            // console.log("lalalalalalalalalalla",addressThis);
-            
-            // router02.swapExactTokensForTokensSupportingFeeOnTransferTokens(taxAmount, 0, path1, marketingAddress, block.timestamp+3600);
-            // router.swapExactTokensForTokensSupportingFeeOnTransferTokens(taxAmount, 0, path1, marketingAddress, block.timestamp+3600);
-            // address[] memory path2= new address[](2);
-            // path2[0] = USDT;
-            // path2[1] = SaitaToken;
-            // uint256[] memory amountOut = router.getAmountsOut(taxAmount, path2);
-            // uint256 saitamaIn = amountOut[1];
-            // console.log("hihihihihhihihihihii",saitamaIn);
-            // if(IERC20(SaitaToken).balanceOf(address(this))>=saitamaInThousandUSDT){
-            //     IERC20(SaitaToken).transfer(address(0), saitamaInThousandUSDT);
-            // }
-        // }
+        
         
         emit Transfer(sender, recipient, s.tTransferAmount);
         if(s.tLiquidity > 0){
         emit Transfer(sender, address(this), s.tLiquidity);
         }
     }
-
-    // function swapTokensForETH(uint256 tokenAmount) private lockTheSwap {
-    //     // generate the uniswap pair path of token -> weth
-    //     address[] memory path = new address[](2);
-    //             path[0] = address(this);
-    //             path[1] = router.WETH();
-
-    //     _approve(address(this), address(router), tokenAmount);
-    //     // make the swap
-    //     router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-    //         tokenAmount,
-    //         0, // accept any amount of ETH
-    //         path,
-    //         address(this),
-    //         block.timestamp
-    //     );
-
-    //     (bool success, ) = treasuryAddress.call{value: (ETHAmount.treasury * address(this).balance)/tokenAmount}("");
-    //     require(success, 'ETH_TRANSFER_FAILED');
-    //     ETHAmount.treasury = 0;
-
-    //     (success, ) = marketingAddress.call{value: (ETHAmount.marketing * address(this).balance)/tokenAmount}("");
-    //     require(success, 'ETH_TRANSFER_FAILED');
-    //     ETHAmount.marketing = 0;
-    // }
 
     function updateTreasuryWallet(address newWallet) external onlyOwner addressValidation(newWallet) {
         require(treasuryAddress != newWallet, 'SaitaRealty: Wallet already set');

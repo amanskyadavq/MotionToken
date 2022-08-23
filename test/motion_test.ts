@@ -3,7 +3,7 @@ import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { time } from "console";
 import { mineBlocks, expandTo9Decimals, expandTo18Decimals } from "./utilities/utilities";
-import { Burner, Burner__factory, CalHash, CalHash__factory, IFactory, IFactory__factory, IRouter, IRouter__factory, Motion, MotionII, MotionII__factory, Motion__factory, Saitama, Saitama__factory, SaitaRealtyV2, SaitaRealtyV2__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02, UniswapV2Router02__factory, USDT, USDT__factory, WETH9, WETH9__factory } from "../typechain";
+import { Burner, Burner__factory, CalHash, CalHash__factory, IFactory, IFactory__factory, IRouter, IRouter__factory, Motion, Motion__factory, Saitama, Saitama__factory, SaitaRealtyV2, SaitaRealtyV2__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02, UniswapV2Router02__factory, USDT, USDT__factory, WETH9, WETH9__factory } from "../typechain";
 import { string } from "hardhat/internal/core/params/argumentTypes";
 // import { SaitaRealtyV2 } from "../typechain-types/SaitaRealtyV2";
 // import { IFactory } from "../typechain-types/IFactory";
@@ -22,7 +22,6 @@ describe("Testing", function () {
     let usdt : USDT;
     let saitama : Saitama;
     let saitaBurner : Burner;
-    let motionII : MotionII;
 
 
     beforeEach("Saita", async () => {
@@ -42,7 +41,6 @@ describe("Testing", function () {
         saitaBurner = await new Burner__factory(owner).deploy();
         motion = await new Motion__factory(owner).deploy(router.address,saitama.address,saitaBurner.address);
         usdt = await new USDT__factory(owner).deploy(owner.address);
-        motionII = await new MotionII__factory(owner).deploy(router.address,saitama.address,saitaBurner.address);
         await saitaBurner.connect(owner).initialize(router.address,saitama.address,motion.address,usdt.address);
         await motion.connect(owner).updateCoolDownSettings(false,0);
         await saitama.connect(owner).approve(router.address,expandTo18Decimals(1000000000));
