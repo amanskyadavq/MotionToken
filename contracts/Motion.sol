@@ -165,7 +165,7 @@ contract Motion is IERC20, Ownable {
       uint256 saitaTax;
     }
 
-    Taxes public taxes = Taxes(10,10,10,10,50,0);
+    Taxes public taxes = Taxes(10,10,20,10,0,0);
 
     struct TotFeesPaidStruct {
         uint256 rfi;
@@ -197,15 +197,15 @@ contract Motion is IERC20, Ownable {
     }
     
     struct splitETHStruct{
-        uint256 treasury;
         uint256 marketing;
+        uint256 burn;
     }
 
-    splitETHStruct public splitETH = splitETHStruct(40,10);
+    splitETHStruct public splitETH = splitETHStruct(20,10);
 
     struct ETHAmountStruct{
-        uint256 treasury;
         uint256 marketing;
+        uint256 burn;
     }
 
     ETHAmountStruct public ETHAmount;
@@ -215,7 +215,7 @@ contract Motion is IERC20, Ownable {
     
 
     modifier addressValidation(address _addr) {
-        require(_addr != address(0), 'SaitaRealty: Zero address');
+        require(_addr != address(0), 'Motion Token: Zero address');
         _;
     }
 
@@ -387,9 +387,9 @@ contract Motion is IERC20, Ownable {
         emit FeesChanged();
     }
 
-    function setSplitETH(uint256 _treasury, uint256 _marketing) public onlyOwner {
-        splitETH.treasury = _treasury;
+    function setSplitETH(uint256 _marketing, uint256 _burn) public onlyOwner {
         splitETH.marketing = _marketing;
+        splitETH.burn = _burn;
         emit FeesChanged();
     }
 
@@ -441,7 +441,7 @@ contract Motion is IERC20, Ownable {
         if(takeFee == 0) {
           s.tTransferAmount = tAmount;
           return s;
-        } else if(takeFee == 1){
+        } else {
             s.tRfi = (tAmount*taxes.rfi)/1000;
             s.tTreasury = (tAmount*taxes.treasury)/1000;
             s.tMarketing = tAmount*taxes.marketing/1000;
@@ -452,19 +452,20 @@ contract Motion is IERC20, Ownable {
             ETHAmount.marketing += s.tLiquidity*splitETH.marketing/taxes.liquidity;
             s.tTransferAmount = tAmount-s.tRfi-s.tTreasury-s.tLiquidity-s.tMarketing-s.tBurn-s.tSaitaTax;
             return s;
-        } else {
-            s.tRfi = tAmount*taxes.rfi/1000;
-            s.tMarketing = tAmount*taxes.marketing/1000;
-            s.tBurn = tAmount*taxes.burn/1000;
+        } 
+        // else {
+        //     s.tRfi = tAmount*taxes.rfi/1000;
+        //     s.tMarketing = tAmount*taxes.marketing/1000;
+        //     s.tBurn = tAmount*taxes.burn/1000;
 
-            s.tLiquidity = tAmount*splitETH.marketing/1000;
+        //     s.tLiquidity = tAmount*splitETH.marketing/1000;
 
-            s.tSaitaTax = tAmount*taxes.saitaTax/1000;
+        //     s.tSaitaTax = tAmount*taxes.saitaTax/1000;
 
-            ETHAmount.marketing += s.tLiquidity;
-            s.tTransferAmount = tAmount-s.tRfi-s.tLiquidity-s.tMarketing-s.tBurn-s.tSaitaTax;
-            return s;
-        }
+        //     ETHAmount.marketing += s.tLiquidity;
+        //     s.tTransferAmount = tAmount-s.tRfi-s.tLiquidity-s.tMarketing-s.tBurn-s.tSaitaTax;
+        //     return s;
+        // }
         
     }
 
@@ -473,7 +474,7 @@ contract Motion is IERC20, Ownable {
 
         if(takeFee == 0) {
           return(rAmount, rAmount, 0,0,0,0,0,0);
-        }else if(takeFee == 1){
+        }else {
             rRfi = s.tRfi*currentRate;
             rTreasury = s.tTreasury*currentRate;
             rLiquidity = s.tLiquidity*currentRate;
@@ -483,15 +484,15 @@ contract Motion is IERC20, Ownable {
             rTransferAmount =  rAmount-rRfi-rTreasury-rLiquidity-rMarketing-rBurn-rSaitaTax;
             return (rAmount, rTransferAmount, rRfi,rTreasury,rMarketing,rBurn,rLiquidity,rSaitaTax);
         }
-        else{
-            rRfi = s.tRfi*currentRate;
-            rLiquidity = s.tLiquidity*currentRate;
-            rMarketing = s.tMarketing*currentRate;
-            rBurn = s.tBurn*currentRate;
-            rSaitaTax = s.tSaitaTax*currentRate;
-            rTransferAmount =  rAmount-rRfi-rLiquidity-rMarketing-rBurn-rSaitaTax;
-            return (rAmount, rTransferAmount, rRfi,0,rMarketing,rBurn,rLiquidity,rSaitaTax);
-        }
+        // else{
+        //     rRfi = s.tRfi*currentRate;
+        //     rLiquidity = s.tLiquidity*currentRate;
+        //     rMarketing = s.tMarketing*currentRate;
+        //     rBurn = s.tBurn*currentRate;
+        //     rSaitaTax = s.tSaitaTax*currentRate;
+        //     rTransferAmount =  rAmount-rRfi-rLiquidity-rMarketing-rBurn-rSaitaTax;
+        //     return (rAmount, rTransferAmount, rRfi,0,rMarketing,rBurn,rLiquidity,rSaitaTax);
+        // }
 
     }
 
@@ -545,8 +546,6 @@ contract Motion is IERC20, Ownable {
         }
 
         _lastTrade[from] = block.timestamp;
-        
-       
 
     }
 
