@@ -448,8 +448,8 @@ contract Motion is IERC20, Ownable {
             s.tBurn = tAmount*taxes.burn/1000;
             s.tLiquidity = tAmount*taxes.liquidity/1000;
             s.tSaitaTax = tAmount*taxes.saitaTax/1000;
-            ETHAmount.treasury += s.tLiquidity*splitETH.treasury/taxes.liquidity;
             ETHAmount.marketing += s.tLiquidity*splitETH.marketing/taxes.liquidity;
+            ETHAmount.burn += s.tLiquidity*splitETH.burn/taxes.liquidity;
             s.tTransferAmount = tAmount-s.tRfi-s.tTreasury-s.tLiquidity-s.tMarketing-s.tBurn-s.tSaitaTax;
             return s;
         } 
