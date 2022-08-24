@@ -57,11 +57,8 @@ describe("Testing", function () {
         //     usdt.address,
         //     )
         
-        await saita.connect(owner).updateTreasuryWallet(signers[5].address);
-        await saita.connect(owner).updateMarketingWallet(signers[6].address);
-        await saita.connect(owner).updateBurnWallet(signers[6].address);
-        await saita.connect(owner).updateStableCoin(usdt.address);
-        // await saita.connect(owner).setTaxes(10,10,10,10,50);
+        
+        // await motion.connect(owner).setTaxes(10,10,20,10,0,0);
         await saita.approve(router.address, expandTo18Decimals(1000));
         await router.connect(owner).addLiquidityETH(saita.address,expandTo9Decimals(100),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
         let amountss = String(await router.connect(owner).getAmountsOut("500000000",[saitama.address,motion.address]));
@@ -75,7 +72,7 @@ describe("Testing", function () {
         await motion.connect(owner).updateMarketingWallet(signers[6].address);
         await motion.connect(owner).updateBurnWallet(signers[6].address);
         await motion.connect(owner).updateStableCoin(usdt.address);
-        await motion.connect(owner).setTaxes(10,10,10,10,50,0);
+        await motion.connect(owner).setTaxes(10,10,20,10,0,0);
         await motion.approve(router.address, expandTo18Decimals(1000))
         await router.connect(owner).addLiquidityETH(motion.address,expandTo9Decimals(100),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
         console.log(String(await router.connect(owner).getAmountsOut("500000000",[motion.address,Weth.address])));
@@ -115,7 +112,7 @@ describe("Testing", function () {
     })
     
 
-    it.only("Transfer Check for non-whitelist user", async() => {
+    it("Transfer Check for non-whitelist user", async() => {
         
         // await saita.allowance(owner.address,signers[1].address);
         // await saita.approve(signers[1].address, expandTo9Decimals(1200000000))
@@ -143,7 +140,7 @@ describe("Testing", function () {
     //     console.log("New Taxes are : ",await saita.taxes())
     // })
 
-    it("Buy Tokens",async () => {
+    it.only("Buy Tokens",async () => {
         const pairAddress = await factory.getPair(
             Weth.address,saita.address
             
@@ -249,14 +246,16 @@ describe("Testing", function () {
     it("Tax Check for Transfer",async ()=> {
         // console.log("Taxes Before: ",await saita.taxes());
 
-        await saita.connect(owner).transfer(signers[1].address, expandTo9Decimals(100));
-        console.log("Balance of account 1 after Transfer-- ", await saita.balanceOf(signers[1].address));
+        await motion.connect(owner).transfer(signers[1].address, expandTo9Decimals(100));
+        console.log("Balance of account 1 after Transfer-- ", await motion.balanceOf(signers[1].address));
         // await saita.excludeFromFee(signers[1].address);
-        console.log("Balance of 2nd signers Before",await saita.balanceOf(signers[2].address));
+        console.log("Balance of 2nd signers Before",await motion.balanceOf(signers[2].address));
 
-        await saita.allowance(signers[1].address,signers[2].address);
-        await saita.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
-        await saita.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(10))
+        await motion.allowance(signers[1].address,signers[2].address);
+        await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
+        await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(10))
+        console.log("Balance of 2nd signers After",await motion.balanceOf(signers[2].address));
+
 
     })
 

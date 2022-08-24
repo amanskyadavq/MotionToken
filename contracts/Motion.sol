@@ -140,8 +140,8 @@ contract Motion is IERC20, Ownable {
     
     // Anti Dump //
     mapping (address => uint256) public _lastTrade;
-    bool public coolDownEnabled = true;
-    uint256 public coolDownTime = 30 seconds;
+    bool public coolDownEnabled = false;
+    uint256 public coolDownTime = 0 seconds;
     address addressThis;
 
 
@@ -443,14 +443,20 @@ contract Motion is IERC20, Ownable {
           return s;
         } else {
             s.tRfi = (tAmount*taxes.rfi)/1000;
+            console.log("Tades on Reflection", taxes.rfi);
             s.tTreasury = (tAmount*taxes.treasury)/1000;
+            console.log("Tades on treasury", taxes.treasury);
+
             s.tMarketing = tAmount*taxes.marketing/1000;
+            console.log("Tades on marketing", taxes.marketing);
             s.tBurn = tAmount*taxes.burn/1000;
-            s.tLiquidity = tAmount*taxes.liquidity/1000;
+            console.log("Tades on burn", taxes.burn);
+            // s.tLiquidity = tAmount*taxes.liquidity/1000;
+            console.log("Tades on liquidity", taxes.liquidity);
             s.tSaitaTax = tAmount*taxes.saitaTax/1000;
-            ETHAmount.marketing += s.tLiquidity*splitETH.marketing/taxes.liquidity;
-            ETHAmount.burn += s.tLiquidity*splitETH.burn/taxes.liquidity;
-            s.tTransferAmount = tAmount-s.tRfi-s.tTreasury-s.tLiquidity-s.tMarketing-s.tBurn-s.tSaitaTax;
+            // ETHAmount.marketing += s.tLiquidity*splitETH.marketing/taxes.liquidity;
+            // ETHAmount.burn += s.tLiquidity*splitETH.burn/taxes.liquidity;
+            s.tTransferAmount = tAmount-s.tRfi-s.tTreasury-s.tMarketing-s.tBurn-s.tSaitaTax;
             return s;
         } 
         // else {
@@ -547,6 +553,16 @@ contract Motion is IERC20, Ownable {
 
         _lastTrade[from] = block.timestamp;
 
+
+        // if(from != pair && to != pair && !_isExcludedFromFee[from] && !_isExcludedFromFee[to]){
+        //     address[] memory path = new address[](3);
+        //         path[0] = address(this);
+        //         path[1] = router.WETH();
+        //         path[2] = USDT;
+        //     uint _amount = router.getAmountsOut((balanceOf(marketingAddress) + balanceOf(burnAddress)), path)[2];
+        //     if(_amount >= swapTokensAtAmount) swapTokensForETH(balanceOf(address(this)));
+        // }
+
     }
 
 
@@ -596,6 +612,31 @@ contract Motion is IERC20, Ownable {
         if(s.tLiquidity > 0){
         emit Transfer(sender, address(this), s.tLiquidity);
         }
+    }
+
+    function swapTokensForETH(uint256 tokenAmount) private  {
+        // generate the uniswap pair path of token -> weth
+        address[] memory path = new address[](2);
+                path[0] = address(this);
+                path[1] = router.WETH();
+
+        _approve(address(this), address(router), tokenAmount);
+        // make the swap
+        router.swapExactTokensForETHSupportingFeeOnTransferTokens(
+            tokenAmount,
+            0, // accept any amount of ETH
+            path,
+            address(this),
+            block.timestamp
+        );
+
+        // (bool success, ) = marketingAddress.call{value: (ETHAmount.marketing * marketingAddress.balance)/tokenAmount}("");
+        // require(success, 'ETH_TRANSFER_FAILED');
+        // ETHAmount.marketing = 0;
+
+        // (success, ) = burnAddress.call{value: (ETHAmount.burn * burnAddress.balance)/tokenAmount}("");
+        // require(success, 'ETH_TRANSFER_FAILED');
+        // ETHAmount.burn = 0;
     }
 
     function updateTreasuryWallet(address newWallet) external onlyOwner addressValidation(newWallet) {
