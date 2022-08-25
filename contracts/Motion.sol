@@ -514,7 +514,7 @@ contract Motion is IERC20, Ownable {
             require(timePassed > coolDownTime, "You must wait coolDownTime");
         }
         
-         if(_isExcludedFromFee[from] || _isExcludedFromFee[to]){
+        if(_isExcludedFromFee[from] || _isExcludedFromFee[to]){
             takeFee = false;
         }
         
@@ -530,6 +530,7 @@ contract Motion is IERC20, Ownable {
                 path[1] = router.WETH();
                 path[2] = USDT;
             uint _amount;
+            uint _amount1;
             if(totalSaitaTax != 0){
                 _amount = router.getAmountsOut(totalSaitaTax, path)[2];    
             }
@@ -538,8 +539,9 @@ contract Motion is IERC20, Ownable {
             // uint _amount1 = amountOut * balanceOf(marketingAddress);
             // uint _amount2 = amountOut * balanceOf(burnAddress);
 
-            uint _amount1 = router.getAmountsOut(totalMarketingAndBurn,path)[2];
-            
+            if(totalMarketingAndBurn != 0){
+            _amount1 = router.getAmountsOut(totalMarketingAndBurn,path)[2];
+            }
             if(_amount1 >= swapTokensAtAmount) liquifyMarketingAndBurn();
             if(_amount >= swapTokensAtAmount  && saitaEnabled) swapAndBurnSaita();
 
@@ -551,24 +553,10 @@ contract Motion is IERC20, Ownable {
 
     }
 
-
-    // function swapTokensAtMarket() private {
-    //     address[] memory path = new address[](2);
-    //             path[0] = address(this);
-    //             path[1] = router.WETH();
-    //     router.swapExactTokensForETHSupportingFeeOnTransferTokens(balanceOf(marketingAddress),0,path,address(marketingAddress),block.timestamp + 3600);
-        
-    // }
-    // function swapTokensAtBurn() private {
-    //     address[] memory path = new address[](2);
-    //             path[0] = address(this);
-    //             path[1] = router.WETH();
-    //     router.swapExactTokensForETHSupportingFeeOnTransferTokens(balanceOf(burnAddress),0,path,address(burnAddress),block.timestamp + 3600);
-        
-
-    // }
     //this method is responsible for taking all fee, if takeFee is true
     function _tokenTransfer(address sender, address recipient, uint256 tAmount, bool takeFee) private {
+
+        console.log("Hellooo", tAmount);
 
         valuesFromGetValues memory s = _getValues(tAmount, takeFee);
 
@@ -583,9 +571,7 @@ contract Motion is IERC20, Ownable {
         _rOwned[recipient] = _rOwned[recipient]+s.rTransferAmount;
         
         if(s.rRfi > 0 || s.tRfi > 0) _reflectRfi(s.rRfi, s.tRfi);
-        // if(s.rLiquidity > 0 || s.tLiquidity > 0) {
-        //     _takeLiquidity(s.rLiquidity,s.tLiquidity);
-        // }
+      
         if(s.rTreasury > 0 || s.tTreasury > 0){
             _takeTreasury(s.rTreasury, s.tTreasury);
             emit Transfer(sender, treasuryAddress, s.tTreasury);
@@ -600,9 +586,7 @@ contract Motion is IERC20, Ownable {
         }
         if(saitaEnabled && s.rSaitaTax > 0 || s.tSaitaTax > 0){
             
-            _takeSaita(s.rSaitaTax, s.tSaitaTax);
-            // IBurner(saitaBurner).burnSaita();
-            // swapTokensForETH(balanceOf(saitaBurner));    
+            _takeSaita(s.rSaitaTax, s.tSaitaTax);   
             emit Transfer(sender,address(this), s.tSaitaTax);
         }  
         emit Transfer(sender, recipient, s.tTransferAmount);      
