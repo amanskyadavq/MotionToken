@@ -31,16 +31,16 @@ async function main() {
   /**
  @dev Getting contracts for deployment via "ethers.getContractFactory" as we require ethers for deployment
  */
-  let Saita = await ethers.getContractFactory("SaitaRealtyV2");
+  let Saita = await ethers.getContractFactory("Motion");
 //   let WETH = await ethers.getContractFactory("WETH9");
 //   let Factory = await ethers.getContractFactory("UniswapV2Factory");
 //   let Router = await ethers.getContractFactory("UniswapV2Router02"); 
   
 
 
-  let saita = await Saita.deploy(router);
+  let saita = await Saita.deploy(router, "0x6f38d8D71d9B51FC5E8d2F7b5859E9e842671C7B");
   // let saita = await Saita.attach(testnet.saita);
-  console.log("Saita",saita.address);
+  console.log("Motion",saita.address);
 
   // let weth = await WETH.deploy();
   // let weth = await WETH.attach(testnet.weth);
