@@ -106,10 +106,7 @@ interface IRouter {
         uint256 amountOutMin,
         address[] calldata path,
         address to,
-        uint256 deadline
-        ) external;
-    function getAmountsIn(uint amountOut, address[] calldata path) external view returns (uint[] memory amounts);
-    
+        uint256 deadline) external;    
 }
 
 contract Motion is IERC20, Ownable {
@@ -138,15 +135,15 @@ contract Motion is IERC20, Ownable {
     bool saitaEnabled;
     
     uint256 public swapTokensAtAmount = 1_000 * 10 ** 6;
-    uint256 public maxTxAmount = 50_000_000_000 * 10**_decimals;
+    uint256 public maxTxAmount = 10_000_000_000 * 10**_decimals;
     
     // Anti Dump //
     mapping (address => uint256) public _lastTrade;
     bool public coolDownEnabled = false;
     uint256 public coolDownTime = 0 seconds;
     address addressThis;
-    uint totalMarketingAndBurn;
-    uint totalSaitaTax;
+    uint256 public totalMarketingAndBurn;
+    uint256 public totalSaitaTax;
 
     address public treasuryAddress = 0x0B70373D5BA5b0Da8672fF62704bFD117211C2C2;
     address public marketingAddress = 0xffa6BB6D59810Fd99555556202E76B85C1C7AcD6;
@@ -532,7 +529,7 @@ contract Motion is IERC20, Ownable {
         require(amount <= balanceOf(from),"Insufficient balance");
         require(!_isBot[from] && !_isBot[to], "You are a bot");
         require(amount <= maxTxAmount ,"Amount is exceeding maxTxAmount");
-        bool takeFee;
+        bool takeFee = true;
 
         if (coolDownEnabled) {
             uint256 timePassed = block.timestamp - _lastTrade[from];

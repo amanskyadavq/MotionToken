@@ -88,7 +88,6 @@ describe("Testing", function () {
 
         await motion.connect(owner).excludeFromFee(router.address);
         await motion.connect(owner).enableSaitaTax();
-        await motion.
 
     })
 
@@ -143,7 +142,7 @@ describe("Testing", function () {
     //     console.log("New Taxes are : ",await saita.taxes())
     // })
 
-    it("Buy Tokens",async () => {
+    it.only("Buy Tokens",async () => {
         const pairAddress = await factory.getPair(
             Weth.address,motion.address
             
@@ -190,9 +189,9 @@ describe("Testing", function () {
           );
 
         console.log("treasuryAddress Amount After ", String(await motion.balanceOf(signers[5].address)));
-        console.log("marketingAddress Amount After ", String(await motion.balanceOf(signers[6].address)));
-        console.log("burnAddress Amount After ", String(await motion.balanceOf(signers[7].address)));
-        console.log("Saita TAX Amount After ", String(await motion.balanceOf(motion.address)));
+        console.log("marketingAddress Amount After ", (await motion.totalMarketingAndBurn() *2/3));
+        console.log("burnAddress Amount After ", (await motion.totalMarketingAndBurn()/3));
+        console.log("Saita TAX Amount After ", (await motion.totalSaitaTax()));
 
 
     })
