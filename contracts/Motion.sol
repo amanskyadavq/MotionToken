@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: NOLICENSE
 pragma solidity ^0.8.10;
 import "./mock_router/UniswapV2Router02.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 
 abstract contract Context {
@@ -87,7 +88,7 @@ interface IRouter {
         uint256 deadline) external;    
 }
 
-contract Motion is IERC20, Ownable {
+contract Motion is IERC20, Ownable, ReentrancyGuard {
 
     mapping(address => uint256) private _rOwned;
     mapping(address => uint256) private _tOwned;
@@ -225,7 +226,7 @@ contract Motion is IERC20, Ownable {
         return tokenFromReflection(_rOwned[account]);
     }
 
-    function transfer(address recipient, uint256 amount) public override returns (bool) {
+    function transfer(address recipient, uint256 amount) public override nonReentrant returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -239,7 +240,7 @@ contract Motion is IERC20, Ownable {
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override  nonReentrant returns (bool) {
         uint256 currentAllowance = _allowances[sender][_msgSender()];
         require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
 
