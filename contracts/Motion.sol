@@ -3,28 +3,6 @@ pragma solidity ^0.8.10;
 import "./mock_router/UniswapV2Router02.sol";
 
 
-// interface IERC20 {
-//     function totalSupply() external view returns (uint256);
-
-//     function balanceOf(address account) external view returns (uint256);
-
-//     function transfer(address recipient, uint256 amount) external returns (bool);
-
-//     function allowance(address owner, address spender) external view returns (uint256);
-
-//     function approve(address spender, uint256 amount) external returns (bool);
-
-//     function transferFrom(
-//         address sender,
-//         address recipient,
-//         uint256 amount
-//     ) external returns (bool);
-
-//     event Transfer(address indexed from, address indexed to, uint256 value);
-
-//     event Approval(address indexed owner, address indexed spender, uint256 value);
-// }
-
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
         return msg.sender;
@@ -369,12 +347,6 @@ contract Motion is IERC20, Ownable {
         totFeesPaid.rfi += tRfi;
     }
 
-    // function _takeLiquidity(uint256 rLiquidity, uint256 tLiquidity) private {
-    //     totFeesPaid.liquidity += tLiquidity;
-    //     if(_isExcluded[address(this)]) _tOwned[address(this)] += tLiquidity;
-    //     _rOwned[address(this)] += rLiquidity;
-    // }
-
     function _takeTreasury(uint256 rTreasury, uint256 tTreasury) private {
         totFeesPaid.treasury += tTreasury;
         if(_isExcluded[treasuryAddress]) _tOwned[treasuryAddress] += tTreasury;
@@ -442,15 +414,10 @@ contract Motion is IERC20, Ownable {
           return s;
         } else {
             s.tRfi = (tAmount*taxes.rfi)/1000;
-            console.log("Tades on Reflection", taxes.rfi);
             s.tTreasury = (tAmount*taxes.treasury)/1000;
-            console.log("Tades on treasury", taxes.treasury);
             s.tMarketing = tAmount*taxes.marketing/1000;
-            console.log("Tades on marketing", taxes.marketing);
             s.tBurn = tAmount*taxes.burn/1000;
-            console.log("Tades on burn", taxes.burn);
             s.tSaitaTax = tAmount*taxes.saitaTax/1000;
-            console.log("Tades on Saita", taxes.saitaTax);
             s.tTransferAmount = tAmount-s.tRfi-s.tTreasury-s.tMarketing-s.tBurn-s.tSaitaTax;
             return s;
         } 
@@ -532,32 +499,19 @@ contract Motion is IERC20, Ownable {
             uint _amount;
             uint _amount1;
             if(totalSaitaTax != 0){
-                _amount = router.getAmountsOut(totalSaitaTax, path)[2];    
+                _amount = router.getAmountsOut(totalSaitaTax, path)[2];  
+                if(_amount >= swapTokensAtAmount && saitaEnabled) swapAndBurnSaita();  
             }
-                
-            // uint _amount = router.getAmountsIn(10**9,path)[2];
-            // uint _amount1 = amountOut * balanceOf(marketingAddress);
-            // uint _amount2 = amountOut * balanceOf(burnAddress);
 
             if(totalMarketingAndBurn != 0){
-            _amount1 = router.getAmountsOut(totalMarketingAndBurn,path)[2];
-            }
-            if(_amount1 >= swapTokensAtAmount) liquifyMarketingAndBurn();
-            if(_amount >= swapTokensAtAmount  && saitaEnabled) swapAndBurnSaita();
-
-            // if(_amount >= swapTokensAtAmount) swapTokensForETH(balanceOf(address(this)));
-
-            // if(_amount1 >= swapTokensAtAmount) swapTokensAtMarket();
-            // if(_amount2 >= swapTokensAtAmount) swapTokensAtBurn();
+                _amount1 = router.getAmountsOut(totalMarketingAndBurn,path)[2];
+                if(_amount1 >= swapTokensAtAmount) liquifyMarketingAndBurn();
+            } 
         }
-
     }
 
     //this method is responsible for taking all fee, if takeFee is true
     function _tokenTransfer(address sender, address recipient, uint256 tAmount, bool takeFee) private {
-
-        console.log("Hellooo", tAmount);
-
         valuesFromGetValues memory s = _getValues(tAmount, takeFee);
 
         if (_isExcluded[sender] ) {  //from excluded
@@ -591,7 +545,6 @@ contract Motion is IERC20, Ownable {
         }  
         emit Transfer(sender, recipient, s.tTransferAmount);      
     }
-
 
     function updateTreasuryWallet(address newWallet) external onlyOwner addressValidation(newWallet) {
         require(treasuryAddress != newWallet, 'SaitaRealty: Wallet already set');
@@ -657,7 +610,8 @@ contract Motion is IERC20, Ownable {
       address dead = 0x000000000000000000000000000000000000dEaD;
       address[] memory path1 = new address[](3);
       path1[0] = address(this);
-      path1[1] = SaitaToken;
+      path1[1] = router.WETH();
+      path1[2] = SaitaToken;
       router.swapExactTokensForTokens(totalSaitaTax, 0, path1,dead , block.timestamp+3600);
       totalSaitaTax = 0;
     }
