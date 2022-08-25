@@ -114,7 +114,7 @@ describe("Testing", function () {
     })
     
 
-    it("Transfer Check for non-whitelist user", async() => {
+    it.only("Transfer Check for non-whitelist user", async() => {
         
         // await saita.allowance(owner.address,signers[1].address);
         // await saita.approve(signers[1].address, expandTo9Decimals(1200000000))
@@ -128,7 +128,7 @@ describe("Testing", function () {
         await motion.allowance(signers[1].address,signers[2].address);
         await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
         await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(100));
-        // // await saita.connect(signers[1]).transfer(signers[2].address, expandTo9Decimals(10));
+        // await motion.connect(signers[1]).transfer(signers[2].address, expandTo9Decimals(10));
         // console.log("Balance of 2nd signers",await motion.balanceOf(signers[2].address));
         // console.log(String(await ethers.provider.getBalance(signers[5].address)),String(await ethers.provider.getBalance(signers[6].address)),"after tr===mr");
         // console.log("Burner balance to swap and burn: ",await motion.balanceOf(saitaBurner.address));
@@ -142,7 +142,7 @@ describe("Testing", function () {
     //     console.log("New Taxes are : ",await saita.taxes())
     // })
 
-    it.only("Buy Tokens",async () => {
+    it("Buy Tokens",async () => {
         const pairAddress = await factory.getPair(
             Weth.address,motion.address
             
@@ -189,9 +189,9 @@ describe("Testing", function () {
           );
 
         console.log("treasuryAddress Amount After ", String(await motion.balanceOf(signers[5].address)));
-        console.log("marketingAddress Amount After ", (await motion.totalMarketingAndBurn() *2/3));
-        console.log("burnAddress Amount After ", (await motion.totalMarketingAndBurn()/3));
-        console.log("Saita TAX Amount After ", (await motion.totalSaitaTax()));
+        // console.log("marketingAddress Amount After ", (await motion.totalMarketingAndBurn() *2/3));
+        // console.log("burnAddress Amount After ", (await motion.totalMarketingAndBurn()/3));
+        // console.log("Saita TAX Amount After ", (await motion.totalSaitaTax()));
 
 
     })

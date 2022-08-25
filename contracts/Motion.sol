@@ -191,24 +191,8 @@ contract Motion is IERC20, Ownable {
       uint256 tBurn;
       uint256 tSaitaTax;
     }
-    
-    struct splitETHStruct{
-        uint256 marketing;
-        uint256 burn;
-    }
-
-    splitETHStruct public splitETH = splitETHStruct(20,10);
-
-    struct ETHAmountStruct{
-        uint256 marketing;
-        uint256 burn;
-    }
-
-    ETHAmountStruct public ETHAmount;
 
     event FeesChanged();
-
-    
 
     modifier addressValidation(address _addr) {
         require(_addr != address(0), 'Motion Token: Zero address');
@@ -377,12 +361,6 @@ contract Motion is IERC20, Ownable {
         taxes.marketing = _marketing;
         taxes.burn = _burn;
         taxes.saitaTax = _saitaTax;
-        emit FeesChanged();
-    }
-
-    function setSplitETH(uint256 _marketing, uint256 _burn) public onlyOwner {
-        splitETH.marketing = _marketing;
-        splitETH.burn = _burn;
         emit FeesChanged();
     }
 
@@ -630,30 +608,6 @@ contract Motion is IERC20, Ownable {
         emit Transfer(sender, recipient, s.tTransferAmount);      
     }
 
-    function swapTokensForETH(uint256 tokenAmount) private  {
-        // generate the uniswap pair path of token -> weth
-        address[] memory path = new address[](2);
-                path[0] = address(this);
-                path[1] = router.WETH();
-
-        _approve(address(this), address(router), tokenAmount);
-        // make the swap
-        router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            tokenAmount,
-            0, // accept any amount of ETH
-            path,
-            address(this),
-            block.timestamp
-        );
-
-        (bool success, ) = marketingAddress.call{value: (ETHAmount.marketing * marketingAddress.balance)/tokenAmount}("");
-        require(success, 'ETH_TRANSFER_FAILED');
-        ETHAmount.marketing = 0;
-
-        (success, ) = burnAddress.call{value: (ETHAmount.burn * burnAddress.balance)/tokenAmount}("");
-        require(success, 'ETH_TRANSFER_FAILED');
-        ETHAmount.burn = 0;
-    }
 
     function updateTreasuryWallet(address newWallet) external onlyOwner addressValidation(newWallet) {
         require(treasuryAddress != newWallet, 'SaitaRealty: Wallet already set');
