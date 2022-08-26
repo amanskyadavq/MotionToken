@@ -113,7 +113,7 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     bool saitaEnabled;
     
-    uint256 public swapTokensAtAmount = 100 * 10 ** 6;
+    uint256 public swapTokensAtAmount = 1_000 * 10 ** 6;
     uint256 public maxTxAmount = 10_000_000_000 * 10**_decimals;
     
     // Anti Dump //
