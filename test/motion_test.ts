@@ -5,9 +5,7 @@ import { time } from "console";
 import { mineBlocks, expandTo9Decimals, expandTo18Decimals } from "./utilities/utilities";
 import { Burner, Burner__factory, CalHash, CalHash__factory, IFactory, IFactory__factory, IRouter, IRouter__factory, Motion, Motion__factory, Saitama, Saitama__factory, SaitaRealtyV2, SaitaRealtyV2__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02, UniswapV2Router02__factory, USDT, USDT__factory, WETH9, WETH9__factory } from "../typechain";
 import { string } from "hardhat/internal/core/params/argumentTypes";
-// import { SaitaRealtyV2 } from "../typechain-types/SaitaRealtyV2";
-// import { IFactory } from "../typechain-types/IFactory";
-// import { IRouter } from "../typechain-types/IRouter";
+
 
 describe("Testing", function () {
     let factory: UniswapV2Factory;
@@ -50,11 +48,6 @@ describe("Testing", function () {
         
         await router.connect(owner).addLiquidity(saitama.address,motion.address,expandTo9Decimals(10000000),expandTo9Decimals(10000000),1,1,owner.address,1759004587);
         
-        let pairAddress = await factory.connect(owner).getPair(motion.address,saitama.address);
-        let pairInstance = await new UniswapV2Pair__factory(owner).attach(pairAddress);
-        console.log("///////////////..........///////////////",await pairInstance.getReserves());
-        let amountss = String(await router.connect(owner).getAmountsOut("500000000",[saitama.address,motion.address]));
-        console.log(amountss);
         await usdt.approve(router.address, expandTo18Decimals(120000));
         await saitama.approve(router.address,expandTo18Decimals(100000000));
         
@@ -68,17 +61,6 @@ describe("Testing", function () {
         await motion.approve(router.address, expandTo18Decimals(1000))
         await router.connect(owner).addLiquidityETH(motion.address,expandTo9Decimals(5000000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
         await router.connect(owner).addLiquidityETH(saitama.address,expandTo9Decimals(5000000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
-
-        // console.log(String(await router.connect(owner).getAmountsOut("500000000",[motion.address,Weth.address])));
-        
-        console.log("After before");
-        // await motion.connect(owner).updateCoolDownSettings(false,0);
-        // await router.connect(owner).addLiquidity(usdt.address,saitama.address,1000000000000,1000000000000000,1,1,owner.address,1759004587);
-        // await motion.connect(owner).enableSaitaTax();
-        // await motion.connect(owner).disableSaitaTax();
-        // await router.connect(owner).addLiquidity(motion.address,usdt.address,expandTo9Decimals(10000),expandTo9Decimals(1),1,1,owner.address,1759004587);
-
-        await motion.connect(owner).enableSaitaTax();
 
     })
 
@@ -98,10 +80,10 @@ describe("Testing", function () {
         console.log("Balance of account 1 before Transfer ", await motion.balanceOf(signers[1].address));
         await motion.allowance(owner.address,signers[1].address);
         await motion.approve(signers[1].address, expandTo9Decimals(1200000000))
-        // await saita.connect(owner).transfer(signers[1].address, expandTo9Decimals(100));
-        await motion.connect(owner).transfer(signers[1].address, expandTo9Decimals(100));      
-         console.log("BAlance of owner after Transfer: ", await motion.balanceOf(owner.address));
-        console.log("Balance of account 1 after Transfer ", await motion.balanceOf(signers[1].address));
+        await motion.connect(owner).transfer(signers[1].address, expandTo9Decimals(100)); 
+        expect( await motion.balanceOf(signers[1].address)).to.be.eq(expandTo9Decimals(100));
+        const test = await motion.totalMarketingAndBurn();
+        console.log("test",test)
     })
     
 
@@ -109,6 +91,8 @@ describe("Testing", function () {
         
         // await motion.connect(owner).setTaxes(10,10,10,10,50,0);
         await motion.connect(owner).transfer(signers[1].address, expandTo9Decimals(1000));
+        expect( await motion.balanceOf(signers[1].address)).to.be.eq(expandTo9Decimals(1000));
+
         await motion.connect(owner).excludeFromFee(saitaBurner.address);
         console.log("Balance of account 1 after Transfer-- ", await motion.balanceOf(signers[1].address));
         // await saita.excludeFromFee(signers[1].address);
@@ -116,19 +100,15 @@ describe("Testing", function () {
         console.log(String(await ethers.provider.getBalance(signers[5].address)),String(await ethers.provider.getBalance(signers[6].address)),"before tr===mr");
         await motion.allowance(signers[1].address,signers[2].address);
         await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
+        // await motion.enableSaitaTax();
         await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(100));
-        // await motion.connect(signers[1]).transfer(signers[2].address, expandTo9Decimals(10));
-        // console.log("Balance of 2nd signers",await motion.balanceOf(signers[2].address));
-        // console.log(String(await ethers.provider.getBalance(signers[5].address)),String(await ethers.provider.getBalance(signers[6].address)),"after tr===mr");
-        // console.log("Burner balance to swap and burn: ",await motion.balanceOf(saitaBurner.address));
-        // console.log("addressssssssssssssssss",motion.address);
-        // console.log("aaaaaaaaaaaaaaaaaaaaaaaaaa",await router.getAmountsOut(1000000000,[usdt.address,saitama.address]));
-    })
-
-    // it("Setting Taxes",async () => {
-    //     await saita.setTaxes(1,1,1,1,5);
-    //     console.log("New Taxes are : ",await saita.taxes())
-    // })
+        let balance_signer2 =  await motion.balanceOf(signers[2].address);
+        expect( await motion.balanceOf(signers[2].address)).to.be.eq(95000000009);
+        const test = await motion.totalMarketingAndBurn();
+        console.log("test",test)
+        const Saitatest = await motion.totalSaitaTax();
+        console.log("Saitatest",Saitatest)
+      })
 
     it("Buy Tokens",async () => {
         const pairAddress = await factory.getPair(
@@ -153,9 +133,6 @@ describe("Testing", function () {
 
         await motion.connect(owner).enableSaitaTax();
 
-        // console.log("burnAddress Amount Before ", String(await saita.valuesFrom()));
-        // console.log("burnAddress Amount Before ", String(await saita.balanceOf(signers[7].address)));
-
         console.log("signer 4 balance: ",String(await motion.balanceOf(signers[4].address)));
 
         await router
@@ -177,9 +154,7 @@ describe("Testing", function () {
           );
 
         console.log("treasuryAddress Amount After ", String(await motion.balanceOf(signers[5].address)));
-        // console.log("marketingAddress Amount After ", (await motion.totalMarketingAndBurn() *2/3));
-        // console.log("burnAddress Amount After ", (await motion.totalMarketingAndBurn()/3));
-        // console.log("Saita TAX Amount After ", (await motion.totalSaitaTax()));
+        expect( await motion.balanceOf(signers[5].address)).to.be.eq(0);
 
 
     })
@@ -192,8 +167,6 @@ describe("Testing", function () {
 
         const path = [motion.address, Weth.address];
         const pairInstance = await pair.attach(pairAddress);
-  
-  
         console.log(
           "Saita at pairAddress",
           String(await motion.balanceOf(pairAddress))
@@ -211,8 +184,6 @@ describe("Testing", function () {
 
         await motion.connect(signers[4]).approve(router.address, expandTo9Decimals(1200000000))
 
-        // await saita.excludeFromFee(signers[4].address);
-  
         await router
           .connect(signers[4])
           .swapExactTokensForETHSupportingFeeOnTransferTokens(
@@ -251,7 +222,7 @@ describe("Testing", function () {
         await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
         await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(10))
         console.log("Balance of 2nd signers After",await motion.balanceOf(signers[2].address));
-
+        await motion.balanceOf(signers[5].address)
 
     })
 

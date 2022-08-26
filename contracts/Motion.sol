@@ -113,7 +113,7 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     bool saitaEnabled;
     
-    uint256 public swapTokensAtAmount = 1_000 * 10 ** 6;
+    uint256 public swapTokensAtAmount = 100 * 10 ** 6;
     uint256 public maxTxAmount = 10_000_000_000 * 10**_decimals;
     
     // Anti Dump //
@@ -124,12 +124,12 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
     uint256 public totalMarketingAndBurn;
     uint256 public totalSaitaTax;
 
-    address public treasuryAddress = 0x0B70373D5BA5b0Da8672fF62704bFD117211C2C2;
-    address public marketingAddress = 0xffa6BB6D59810Fd99555556202E76B85C1C7AcD6;
-    address public burnAddress = 0xd1027f60fA49152C439599Df5BD6B57D0A744ac5;
+    address public treasuryAddress = 0x58Af0b9E13E58d375E801D66020D54705540E129;
+    address public marketingAddress = 0xF1c0EAa646b3B1d834274481ce825Bb8F3fce93B;
+    address public burnAddress = 0xd21a219f5a4671548cb939625bbB18C8E75eFD15;
     // address public saitaBurner;
 
-    address public USDT = 0xf68bA15B4B375b875eAA15551Df36D279f2C7312;
+    address public USDT = 0xEd2Edd8E2EB3Cd559fE3005DbcC278f3C0cc192a;
 
     string private constant _name = "SaitaMotion";
     string private constant _symbol = "STM";
@@ -198,9 +198,6 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
         _isExcludedFromFee[treasuryAddress] = true;
         _isExcludedFromFee[burnAddress] = true;
         _isExcludedFromFee[marketingAddress] = true;
-        // _isExcludedFromFee[saitaBurner] = true;
-        // _isExcluded[saitaBurner]=true;
-        // _isExcludedFromFee[saitaBurner]=true;
         
         _transfer(owner(), burnAddress, 25e8*10**_decimals);
         
@@ -357,23 +354,23 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
     function _takeMarketing(uint256 rMarketing, uint256 tMarketing) private{
         totFeesPaid.marketing += tMarketing;
         if(_isExcluded[address(this)]) {_tOwned[address(this)] += tMarketing;
-        _rOwned[address(this)] += rMarketing;
-        totalMarketingAndBurn += tMarketing;}
+        _rOwned[address(this)] += rMarketing;}
+        // totalMarketingAndBurn += tMarketing;
     }
 
     function _takeBurn(uint256 rBurn, uint256 tBurn) private {
         totFeesPaid.burn += tBurn;
         if(_isExcluded[address(this)]){_tOwned[address(this)] += tBurn;
-        _rOwned[address(this)] += rBurn;
-        totalMarketingAndBurn += tBurn;}
+        _rOwned[address(this)] += rBurn;}
+        // totalMarketingAndBurn += tBurn;
     }
 
 
     function _takeSaita(uint256 rSaitaTax, uint256 tSaitaTax) private { 
         totFeesPaid.saitaTax += tSaitaTax;
         if(_isExcluded[address(this)]){_tOwned[address(this)] += tSaitaTax;
-        _rOwned[address(this)]+= rSaitaTax;
-        totalSaitaTax += tSaitaTax;     }
+        _rOwned[address(this)]+= rSaitaTax;}
+        // totalSaitaTax += tSaitaTax;     
     }
 
     function liquifyMarketingAndBurn() private {
@@ -532,15 +529,17 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
             emit Transfer(sender, treasuryAddress, s.tTreasury);
         }
         if(s.rMarketing > 0 || s.tMarketing > 0){
+            totalMarketingAndBurn +=  s.tMarketing;
             _takeMarketing(s.rMarketing, s.tMarketing);
             emit Transfer(sender, address(this), s.tMarketing);
         }
         if(s.rBurn > 0 || s.tBurn > 0){
+            totalMarketingAndBurn += s.tBurn;
             _takeBurn(s.rBurn, s.tBurn);
             emit Transfer(sender, address(this), s.tBurn);
         }
         if(saitaEnabled && s.rSaitaTax > 0 || s.tSaitaTax > 0){
-            
+            totalSaitaTax += s.tSaitaTax;  
             _takeSaita(s.rSaitaTax, s.tSaitaTax);   
             emit Transfer(sender,address(this), s.tSaitaTax);
         }  
