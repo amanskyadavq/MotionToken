@@ -113,7 +113,7 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     bool saitaEnabled;
     
-    uint256 public swapTokensAtAmount = 1_000 * 10 ** 6;
+    uint256 public swapTokensAtAmount = 100 * 10 ** 6;
     uint256 public maxTxAmount = 10_000_000_000 * 10**_decimals;
     
     // Anti Dump //
@@ -129,7 +129,7 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
     address public burnAddress = 0xd21a219f5a4671548cb939625bbB18C8E75eFD15;
     // address public saitaBurner;
 
-    address public USDT = 0xEd2Edd8E2EB3Cd559fE3005DbcC278f3C0cc192a;
+    address public USDT = 0xD9c83CCc7BE772B0434c487ADCb9cFd51Abce033;
 
     string private constant _name = "SaitaMotion";
     string private constant _symbol = "STM";

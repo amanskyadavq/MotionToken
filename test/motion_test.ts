@@ -117,6 +117,7 @@ describe("Testing", function () {
         { value: expandTo18Decimals(1)}
         );
         expect( await motion.balanceOf(signers[6].address)).to.be.eq(0);
+        expect(await motion.balanceOf(signers[4].address)).to.be.eq(426107313368301);
     })
 
     it("sell of Saita Token", async()=>{
@@ -140,16 +141,18 @@ describe("Testing", function () {
             signers[4].address,
             1781718114
           );
+          expect(await motion.balanceOf(signers[4].address)).to.be.eq(90000000000);
+
       })
 
     it("Tax Check for Transfer",async ()=> {
         await motion.connect(owner).transfer(signers[1].address, expandTo9Decimals(100));
         expect (await motion.balanceOf(signers[1].address)).to.be.eq(100000000000);
         await motion.allowance(signers[1].address,signers[2].address);
-        await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
-        await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(10))
-        await motion.balanceOf(signers[5].address)
-
+        await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000));
+        await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(10));
+        expect(await motion.balanceOf(signers[5].address)).to.be.eq(100000000);
+        expect(await motion.balanceOf(signers[2].address)).to.be.eq(9500000000);
     })
 
     it("Tax Check for Transfer", async() => {
@@ -171,10 +174,10 @@ describe("Testing", function () {
             1699971655,
             { value: expandTo18Decimals(1)}
             );
-        
+        expect(await motion.balanceOf(signers[4].address)).to.be.eq(430640369893495);
     })
 
-    it("Calculating Taxes for sell", async() => {
+    it.only("Calculating Taxes for sell", async() => {
         await motion.connect(owner).transfer(signers[4].address,expandTo9Decimals(100));
         const path = [motion.address, Weth.address];
         await motion.connect(signers[4]).approve(router.address, expandTo9Decimals(1200000000))
@@ -188,6 +191,7 @@ describe("Testing", function () {
           signers[4].address,
           1781718114
         );
+        expect(await motion.balanceOf(signers[4].address)).to.be.eq(90000000000);
 
     })
 
