@@ -19,8 +19,6 @@ describe("Testing", function () {
     let inithash : CalHash;
     let usdt : USDT;
     let saitama : Saitama;
-    let saitaBurner : Burner;
-
 
     beforeEach("Saita", async () => {
 
@@ -30,23 +28,15 @@ describe("Testing", function () {
         inithash = await new CalHash__factory(owner).deploy();
         factory = await new UniswapV2Factory__factory(owner).deploy(owner.address);
         router = await new UniswapV2Router02__factory(owner).deploy(factory.address, Weth.address);
-        console.log("JJJ: ",router.address);
         pair = await new UniswapV2Pair__factory(owner).deploy();
         saitama = await new Saitama__factory(owner).deploy();
-        saitaBurner = await new Burner__factory(owner).deploy();
         motion = await new Motion__factory(owner).deploy(router.address,saitama.address);
         usdt = await new USDT__factory(owner).deploy(owner.address);
 
         await saitama.connect(owner).approve(router.address,expandTo18Decimals(1000000000));
         await motion.connect(owner).approve(router.address,expandTo18Decimals(1000000000));
         
-        await motion.connect(owner).excludeFromFee(router.address);
-
-        await saitaBurner.connect(owner).initialize(router.address,saitama.address,motion.address,usdt.address);
-        await motion.connect(owner).updateCoolDownSettings(false,0);
-        
-        await router.connect(owner).addLiquidity(saitama.address,motion.address,expandTo9Decimals(10000000),expandTo9Decimals(10000000),1,1,owner.address,1759004587);
-        
+        await motion.connect(owner).excludeFromFee(router.address);                
         await usdt.approve(router.address, expandTo18Decimals(120000));
         await saitama.approve(router.address,expandTo18Decimals(100000000));
         
@@ -57,8 +47,8 @@ describe("Testing", function () {
         await motion.connect(owner).updateStableCoin(usdt.address);
         await motion.connect(owner).setTaxes(10,10,20,10,0);
         await motion.approve(router.address, expandTo18Decimals(1000))
-        await router.connect(owner).addLiquidityETH(motion.address,expandTo9Decimals(6000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
-        await router.connect(owner).addLiquidityETH(saitama.address,expandTo9Decimals(50000000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
+        await router.connect(owner).addLiquidityETH(motion.address,expandTo9Decimals(600000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
+        await router.connect(owner).addLiquidityETH(saitama.address,expandTo9Decimals(50000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
     })
 
     it("Getter Functions", async() => {
@@ -82,7 +72,6 @@ describe("Testing", function () {
         
         await motion.connect(owner).transfer(signers[1].address, expandTo9Decimals(1000));
         expect( await motion.balanceOf(signers[1].address)).to.be.eq(expandTo9Decimals(1000));
-        await motion.connect(owner).excludeFromFee(saitaBurner.address);
         await motion.allowance(signers[1].address,signers[2].address);
         await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
         await motion.enableSaitaTax();
@@ -208,9 +197,18 @@ describe("Testing", function () {
     })
 
     it("SWAP of MARKETING AND BURNING AMOUNT", async() => {
+
       await motion.connect(owner).transfer(signers[11].address,expandTo9Decimals(100000));
       await motion.connect(signers[11]).transfer(signers[12].address,expandTo9Decimals(5500));
       expect(Number(await ethers.provider.getBalance(signers[6].address))).to.be.eq(10000179502329913072228);
       expect(Number(await ethers.provider.getBalance(signers[7].address))).to.be.eq(10000087351403523243798);
+
+    })
+
+    it("SWAP Tokens to SAITA", async() => {
+      await motion.connect(owner).transfer(signers[11].address,expandTo9Decimals(100000));
+      await motion.enableSaitaTax();
+      await motion.connect(signers[11]).transfer(signers[12].address,expandTo9Decimals(5500));
+      expect(Number(await saitama.balanceOf(signers[7].address))).to.be.eq(447421604291);
     })
 });

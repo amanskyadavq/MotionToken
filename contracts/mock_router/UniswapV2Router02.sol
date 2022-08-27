@@ -10,7 +10,6 @@ import "./libraries/UniswapV2Library.sol";
 import "./libraries/SafeMath.sol";
 import "./interfaces/IERC20.sol";
 import "./interfaces/IWETH.sol";
-import "hardhat/console.sol";
 
 
 contract UniswapV2Router02 {
@@ -614,13 +613,11 @@ contract UniswapV2Router02 {
         uint256 deadline
     ) external virtual ensure(deadline) {
         require(path[path.length - 1] == WETH, "UniswapV2Router: INVALID_PATH");
-        console.log("PAIR: ",UniswapV2Library.pairFor(factory, path[0], path[1]));
         IERC20(path[0]).transferFrom(
             msg.sender,
             UniswapV2Library.pairFor(factory, path[0], path[1]),
             amountIn
         );
-        console.log("In ROuter");
         // TransferHelper.safeTransferFrom(
         //     path[0],
         //     msg.sender,

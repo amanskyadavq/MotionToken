@@ -361,7 +361,6 @@ contract Motion is IERC20, Ownable {
         _rOwned[address(this)] += rBurn;
     }
 
-
     function _takeSaita(uint256 rSaitaTax, uint256 tSaitaTax) private { 
         totFeesPaid.saitaTax += tSaitaTax;
         if(_isExcluded[address(this)]) _tOwned[address(this)] += tSaitaTax;
@@ -383,14 +382,14 @@ contract Motion is IERC20, Ownable {
             0, // accept any amount of ETH
             path,
             marketingAddress,
-            block.timestamp + 120
+            block.timestamp + 1200
         );
         router.swapExactTokensForETHSupportingFeeOnTransferTokens(
             BurnAmount,
             0, // accept any amount of ETH
             path,
             burnAddress,
-            block.timestamp + 120
+            block.timestamp + 1200
         );
         totalMarketingAndBurn = 0;
     }
@@ -415,7 +414,6 @@ contract Motion is IERC20, Ownable {
             s.tTransferAmount = tAmount-s.tRfi-s.tTreasury-s.tMarketing-s.tBurn-s.tSaitaTax;
             return s;
         } 
-        
     }
 
     function _getRValues(valuesFromGetValues memory s, uint256 tAmount, bool takeFee, uint256 currentRate) private pure returns (uint256 rAmount, uint256 rTransferAmount, uint256 rRfi,uint256 rTreasury,uint256 rMarketing,uint256 rBurn, uint256 rSaitaTax) {
@@ -432,7 +430,6 @@ contract Motion is IERC20, Ownable {
             rTransferAmount =  rAmount-rRfi-rTreasury-rMarketing-rBurn-rSaitaTax;
             return (rAmount, rTransferAmount, rRfi,rTreasury,rMarketing,rBurn,rSaitaTax);
         }
-
     }
 
     function _getRate() private view returns(uint256) {
@@ -500,11 +497,7 @@ contract Motion is IERC20, Ownable {
 
             if(totalMarketingAndBurn != 0){
                 _amount1 = router.getAmountsOut(totalMarketingAndBurn,path)[2];
-                console.log("HHHHHHHHHHHHHHHH",_amount1);
-                if(_amount1 >= swapTokensAtAmount){             
-
-                    liquifyMarketingAndBurn();
-                    }
+                if(_amount1 >= swapTokensAtAmount) liquifyMarketingAndBurn();
             } 
         }
     }
@@ -613,7 +606,8 @@ contract Motion is IERC20, Ownable {
       path1[0] = address(this);
       path1[1] = router.WETH();
       path1[2] = SaitaToken;
-      router.swapExactTokensForTokens(totalSaitaTax, 0, path1,dead , block.timestamp+3600);
+      _approve(address(this), address(router), totalSaitaTax);
+      router.swapExactTokensForTokensSupportingFeeOnTransferTokens(totalSaitaTax, 0, path1, dead, block.timestamp+1200);
       totalSaitaTax = 0;
     }
 
