@@ -46,6 +46,9 @@ export function expandTo17Decimals(n: number): BigNumber {
 export function expandTo16Decimals(n: number): BigNumber {
   return BigNumber.from(n).mul(BigNumber.from(10).pow(16));
 }
+export function expandTo6Decimals(n: number): BigNumber {
+  return BigNumber.from(n).mul(BigNumber.from(10).pow(6));
+}
 
 export function getNodeURL(network: string): string {
   return network == 'mainnet' ? 'https://api.trongrid.io' : 'https://api.shasta.trongrid.io';

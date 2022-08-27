@@ -2,7 +2,7 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 import { time } from "console";
-import { mineBlocks, expandTo9Decimals, expandTo18Decimals } from "./utilities/utilities";
+import { mineBlocks, expandTo9Decimals, expandTo18Decimals, expandTo6Decimals } from "./utilities/utilities";
 import { Burner, Burner__factory, CalHash, CalHash__factory, IFactory, IFactory__factory, IRouter, IRouter__factory, Motion, Motion__factory, Saitama, Saitama__factory, SaitaRealtyV2, SaitaRealtyV2__factory, UniswapV2Factory, UniswapV2Factory__factory, UniswapV2Pair, UniswapV2Pair__factory, UniswapV2Router02, UniswapV2Router02__factory, USDT, USDT__factory, WETH9, WETH9__factory } from "../typechain";
 import { string } from "hardhat/internal/core/params/argumentTypes";
 import { sign } from "crypto";
@@ -30,6 +30,7 @@ describe("Testing", function () {
         inithash = await new CalHash__factory(owner).deploy();
         factory = await new UniswapV2Factory__factory(owner).deploy(owner.address);
         router = await new UniswapV2Router02__factory(owner).deploy(factory.address, Weth.address);
+        console.log("JJJ: ",router.address);
         pair = await new UniswapV2Pair__factory(owner).deploy();
         saitama = await new Saitama__factory(owner).deploy();
         saitaBurner = await new Burner__factory(owner).deploy();
@@ -49,16 +50,15 @@ describe("Testing", function () {
         await usdt.approve(router.address, expandTo18Decimals(120000));
         await saitama.approve(router.address,expandTo18Decimals(100000000));
         
-        await router.connect(owner).addLiquidityETH(usdt.address,expandTo9Decimals(1000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
+        await router.connect(owner).addLiquidityETH(usdt.address,expandTo9Decimals(40000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
         await motion.connect(owner).updateTreasuryWallet(signers[5].address);
         await motion.connect(owner).updateMarketingWallet(signers[6].address);
         await motion.connect(owner).updateBurnWallet(signers[7].address);
         await motion.connect(owner).updateStableCoin(usdt.address);
         await motion.connect(owner).setTaxes(10,10,20,10,0);
         await motion.approve(router.address, expandTo18Decimals(1000))
-        await router.connect(owner).addLiquidityETH(motion.address,expandTo9Decimals(5000000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
-        await router.connect(owner).addLiquidityETH(saitama.address,expandTo9Decimals(5000000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
-
+        await router.connect(owner).addLiquidityETH(motion.address,expandTo9Decimals(6000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
+        await router.connect(owner).addLiquidityETH(saitama.address,expandTo9Decimals(50000000),1,1,owner.address,1759004587,{value: expandTo18Decimals(10)});
     })
 
     it("Getter Functions", async() => {
@@ -87,7 +87,6 @@ describe("Testing", function () {
         await motion.connect(signers[1]).approve(signers[2].address, expandTo9Decimals(1200000000))
         await motion.enableSaitaTax();
         await motion.connect(signers[2]).transferFrom(signers[1].address,signers[2].address,expandTo9Decimals(100));
-        let balance_signer2 =  await motion.balanceOf(signers[2].address);
         expect( await motion.balanceOf(signers[2].address)).to.be.eq(94000000009);
         expect(await motion.totalMarketingAndBurn()).to.be.eq(expandTo9Decimals(3));
         expect(await motion.totalSaitaTax()).to.be.eq(expandTo9Decimals(1));
@@ -177,7 +176,7 @@ describe("Testing", function () {
         expect(await motion.balanceOf(signers[4].address)).to.be.eq(430640369893495);
     })
 
-    it.only("Calculating Taxes for sell", async() => {
+    it("Calculating Taxes for sell", async() => {
         await motion.connect(owner).transfer(signers[4].address,expandTo9Decimals(100));
         const path = [motion.address, Weth.address];
         await motion.connect(signers[4]).approve(router.address, expandTo9Decimals(1200000000))
@@ -206,5 +205,12 @@ describe("Testing", function () {
       expect (await motion.balanceOf(signers[14].address)).to.be.eq(expandTo9Decimals(500));
       expect (await motion.balanceOf(signers[13].address)).to.be.eq(expandTo9Decimals(100));
 
+    })
+
+    it("SWAP of MARKETING AND BURNING AMOUNT", async() => {
+      await motion.connect(owner).transfer(signers[11].address,expandTo9Decimals(100000));
+      await motion.connect(signers[11]).transfer(signers[12].address,expandTo9Decimals(5500));
+      expect(Number(await ethers.provider.getBalance(signers[6].address))).to.be.eq(10000179502329913072228);
+      expect(Number(await ethers.provider.getBalance(signers[7].address))).to.be.eq(10000087351403523243798);
     })
 });

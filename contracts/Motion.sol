@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: NOLICENSE
 pragma solidity ^0.8.10;
 import "./mock_router/UniswapV2Router02.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
-
 
 abstract contract Context {
     function _msgSender() internal view virtual returns (address) {
@@ -88,7 +86,7 @@ interface IRouter {
         uint256 deadline) external;    
 }
 
-contract Motion is IERC20, Ownable, ReentrancyGuard {
+contract Motion is IERC20, Ownable {
 
     mapping(address => uint256) private _rOwned;
     mapping(address => uint256) private _tOwned;
@@ -113,7 +111,7 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     bool saitaEnabled;
     
-    uint256 public swapTokensAtAmount = 100 * 10 ** 6;
+    uint256 public swapTokensAtAmount = 1_000 * 10 ** 6;
     uint256 public maxTxAmount = 10_000_000_000 * 10**_decimals;
     
     // Anti Dump //
@@ -223,7 +221,7 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
         return tokenFromReflection(_rOwned[account]);
     }
 
-    function transfer(address recipient, uint256 amount) public override nonReentrant returns (bool) {
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
@@ -237,7 +235,7 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) public virtual override  nonReentrant returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount) public virtual override returns (bool) {
         uint256 currentAllowance = _allowances[sender][_msgSender()];
         require(currentAllowance >= amount, "ERC20: transfer amount exceeds allowance");
 
@@ -353,24 +351,21 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
     
     function _takeMarketing(uint256 rMarketing, uint256 tMarketing) private{
         totFeesPaid.marketing += tMarketing;
-        if(_isExcluded[address(this)]) {_tOwned[address(this)] += tMarketing;
-        _rOwned[address(this)] += rMarketing;}
-        // totalMarketingAndBurn += tMarketing;
+        if(_isExcluded[address(this)]) _tOwned[address(this)] += tMarketing;
+        _rOwned[address(this)] += rMarketing;
     }
 
     function _takeBurn(uint256 rBurn, uint256 tBurn) private {
         totFeesPaid.burn += tBurn;
-        if(_isExcluded[address(this)]){_tOwned[address(this)] += tBurn;
-        _rOwned[address(this)] += rBurn;}
-        // totalMarketingAndBurn += tBurn;
+        if(_isExcluded[address(this)]) _tOwned[address(this)] += tBurn;
+        _rOwned[address(this)] += rBurn;
     }
 
 
     function _takeSaita(uint256 rSaitaTax, uint256 tSaitaTax) private { 
         totFeesPaid.saitaTax += tSaitaTax;
-        if(_isExcluded[address(this)]){_tOwned[address(this)] += tSaitaTax;
-        _rOwned[address(this)]+= rSaitaTax;}
-        // totalSaitaTax += tSaitaTax;     
+        if(_isExcluded[address(this)]) _tOwned[address(this)] += tSaitaTax;
+        _rOwned[address(this)]+= rSaitaTax;
     }
 
     function liquifyMarketingAndBurn() private {
@@ -378,25 +373,26 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
         path[0] = address(this);
         path[1] = router.WETH();
 
+        uint256 MarketAmount = (totalMarketingAndBurn * taxes.marketing)/(taxes.marketing + taxes.burn);
+        uint256 BurnAmount = (totalMarketingAndBurn * taxes.burn) / (taxes.marketing + taxes.burn);
+   
         _approve(address(this), address(router), totalMarketingAndBurn);
         // make the swap
         router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            totalMarketingAndBurn * 2 / 3,
+            MarketAmount,
             0, // accept any amount of ETH
             path,
             marketingAddress,
             block.timestamp + 120
         );
-
         router.swapExactTokensForETHSupportingFeeOnTransferTokens(
-            totalMarketingAndBurn / 3,
+            BurnAmount,
             0, // accept any amount of ETH
             path,
             burnAddress,
             block.timestamp + 120
         );
         totalMarketingAndBurn = 0;
-
     }
 
     function _getValues(uint256 tAmount, bool takeFee) private view returns (valuesFromGetValues memory to_return) {
@@ -464,7 +460,6 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
         emit Approval(owner, spender, amount);
     }
 
-
     function _transfer(address from, address to, uint256 amount) private {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
@@ -496,6 +491,8 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
                 path[2] = USDT;
             uint _amount;
             uint _amount1;
+                    
+
             if(totalSaitaTax != 0){
                 _amount = router.getAmountsOut(totalSaitaTax, path)[2];  
                 if(_amount >= swapTokensAtAmount && saitaEnabled) swapAndBurnSaita();  
@@ -503,7 +500,11 @@ contract Motion is IERC20, Ownable, ReentrancyGuard {
 
             if(totalMarketingAndBurn != 0){
                 _amount1 = router.getAmountsOut(totalMarketingAndBurn,path)[2];
-                if(_amount1 >= swapTokensAtAmount) liquifyMarketingAndBurn();
+                console.log("HHHHHHHHHHHHHHHH",_amount1);
+                if(_amount1 >= swapTokensAtAmount){             
+
+                    liquifyMarketingAndBurn();
+                    }
             } 
         }
     }
