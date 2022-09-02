@@ -40,7 +40,7 @@ abstract contract Ownable is Context {
         _setOwner(newOwner);
     }
 
-    function _setOwner(address newOwner) private {
+    function _setOwner(address newOwner) internal {
         address oldOwner = _owner;
         _owner = newOwner;
         emit OwnershipTransferred(oldOwner, newOwner);
@@ -124,7 +124,7 @@ contract Motion is IERC20, Ownable {
 
     address public treasuryAddress = 0x58Af0b9E13E58d375E801D66020D54705540E129;
     address public marketingAddress = 0xF1c0EAa646b3B1d834274481ce825Bb8F3fce93B;
-    address public burnAddress = 0xd21a219f5a4671548cb939625bbB18C8E75eFD15;
+    address public burnAddress = 0x7B0458f3e22dbf313979286D09Eeb78e72cCa44f;
     // address public saitaBurner;
 
     address public USDT = 0xD9c83CCc7BE772B0434c487ADCb9cFd51Abce033;
@@ -176,7 +176,7 @@ contract Motion is IERC20, Ownable {
         _;
     }
 
-    constructor (address routerAddress, address saitama) {
+    constructor (address routerAddress, address saitama, address owner_) {
         IRouter _router = IRouter(routerAddress);
         address _pair = IFactory(_router.factory())
             .createPair(address(this), _router.WETH());
@@ -189,6 +189,8 @@ contract Motion is IERC20, Ownable {
         addPair(pair);
     
         excludeFromReward(pair);
+
+        _setOwner(owner_);
 
         _rOwned[owner()] = _rTotal;
         _isExcludedFromFee[owner()] = true;

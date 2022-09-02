@@ -30,7 +30,7 @@ describe("Testing", function () {
         router = await new UniswapV2Router02__factory(owner).deploy(factory.address, Weth.address);
         pair = await new UniswapV2Pair__factory(owner).deploy();
         saitama = await new Saitama__factory(owner).deploy();
-        motion = await new Motion__factory(owner).deploy(router.address,saitama.address);
+        motion = await new Motion__factory(owner).deploy(router.address,saitama.address,owner.address);
         usdt = await new USDT__factory(owner).deploy(owner.address);
 
         await saitama.connect(owner).approve(router.address,expandTo18Decimals(1000000000));

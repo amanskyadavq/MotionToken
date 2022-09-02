@@ -17,13 +17,13 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const { chainId } = await ethers.provider.getNetwork();
 
-  const owner = "0xE24f577cfAfC4faaE1c42E9c5335aA0c5D5742db";
+  const owner = "0xd7d92B299A08460Fc21658Cc1AA0F802CD3F7aD0";
   const router = "0x7a250d5630b4cf539739df2c5dacb4c659f2488d";
   /**
    @dev const for deployed addresses
    */
   const testnet = {
-    saita : "0xFc30fA4e1dB6B85f52e0182F879f395B07c5C7A9",
+    saita : "0xd7d92B299A08460Fc21658Cc1AA0F802CD3F7aD0",
     // weth : "0xce6286746CBf9C2c3B3A9FdA37F3b86906c05794",
     // router : "0xA76f69fc3340c2b5772Ae894955Ac4C11Cd5B17F",
     // factory : "0x0E69Ac1682d0c32CdC9175352BD500Ef7C7BBfec",
@@ -38,7 +38,7 @@ async function main() {
   
 
 
-  let saita = await Saita.deploy(router, "0x6f38d8D71d9B51FC5E8d2F7b5859E9e842671C7B");
+  let saita = await Saita.deploy(router, "0x6f38d8D71d9B51FC5E8d2F7b5859E9e842671C7B", owner);
   // let saita = await Saita.attach(testnet.saita);
   console.log("Motion",saita.address);
 
