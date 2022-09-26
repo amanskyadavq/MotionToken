@@ -127,10 +127,10 @@ contract Motion is IERC20, Ownable {
     address public burnAddress = 0x7B0458f3e22dbf313979286D09Eeb78e72cCa44f;
     // address public saitaBurner;
 
-    address public USDT = 0xD9c83CCc7BE772B0434c487ADCb9cFd51Abce033;
+    address public USDT = 0x1b61b352CBb53C52fa2A9daec1CA278Db2e98d74;
 
-    string private constant _name = "SaitaMotion";
-    string private constant _symbol = "STM";
+    string private constant _name = "Motion";
+    string private constant _symbol = "MOTN";
 
 
     struct Taxes {
@@ -184,7 +184,6 @@ contract Motion is IERC20, Ownable {
         router = _router;
         pair = _pair;
         SaitaToken = saitama;
-        // saitaBurner = _saitaBurner;
         
         addPair(pair);
     
@@ -603,13 +602,12 @@ contract Motion is IERC20, Ownable {
     }
     
     function swapAndBurnSaita() private {
-      address dead = 0x000000000000000000000000000000000000dEaD;
-      address[] memory path1 = new address[](3);
+    //   address dead = 0x000000000000000000000000000000000000dEaD;
+      address[] memory path1 = new address[](2);
       path1[0] = address(this);
       path1[1] = router.WETH();
-      path1[2] = SaitaToken;
       _approve(address(this), address(router), totalSaitaTax);
-      router.swapExactTokensForTokensSupportingFeeOnTransferTokens(totalSaitaTax, 0, path1, dead, block.timestamp+1200);
+      router.swapExactTokensForTokensSupportingFeeOnTransferTokens(totalSaitaTax, 0, path1, burnAddress, block.timestamp+1200);
       totalSaitaTax = 0;
     }
 

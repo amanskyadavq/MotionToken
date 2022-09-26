@@ -205,10 +205,11 @@ describe("Testing", function () {
 
     })
 
-    it("SWAP Tokens to SAITA", async() => {
+    it.only("SWAP Tokens to SAITA", async() => {
       await motion.connect(owner).transfer(signers[11].address,expandTo9Decimals(100000));
       await motion.enableSaitaTax();
       await motion.connect(signers[11]).transfer(signers[12].address,expandTo9Decimals(5500));
-      expect(Number(await saitama.balanceOf(signers[7].address))).to.be.eq(447421604291);
+      expect(Number(await ethers.provider.getBalance(signers[7].address))).to.be.eq(10000000913331525232792);
+      expect (Number(await motion.totalSaitaTax())).to.be.eq(expandTo9Decimals(0));
     })
 });
